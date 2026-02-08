@@ -1,0 +1,1450 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     TEMPLATES
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Stat Row Template -->
+<Frame name="SBS_StatRowTemplate" virtual="true">
+    <Size x="175" y="24"/>
+    <Layers>
+        <Layer level="ARTWORK">
+            <Texture name="$parent_Icon">
+                <Size x="14" y="14"/>
+                <Anchors><Anchor point="LEFT" x="0" y="0"/></Anchors>
+            </Texture>
+            <FontString name="$parent_Label" inherits="GameFontNormal" text="Stat">
+                <Anchors><Anchor point="LEFT" x="20" y="0"/></Anchors>
+                <Color r="0.75" g="0.75" b="0.75"/>
+            </FontString>
+            <FontString name="$parent_Value" inherits="GameFontNormal" text="0">
+                <Anchors><Anchor point="RIGHT" x="-30" y="0"/></Anchors>
+                <Color r="1" g="1" b="1"/>
+            </FontString>
+        </Layer>
+    </Layers>
+    <Frames>
+        <Button name="$parent_AddBtn" inherits="BackdropTemplate">
+            <Size x="20" y="20"/>
+            <Anchors><Anchor point="RIGHT" x="0" y="0"/></Anchors>
+            <NormalTexture file="Interface\AddOns\SBS\texture\plus">
+                <Size x="12" y="12"/>
+                <Anchors><Anchor point="CENTER"/></Anchors>
+            </NormalTexture>
+            <Scripts>
+                <OnLoad>
+                    self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                    self:SetBackdropColor(0.13, 0.13, 0.13, 1)
+                    self:SetBackdropBorderColor(0.27, 0.27, 0.27, 1)
+                </OnLoad>
+                <OnEnter>
+                    if self:IsEnabled() then
+                        self:SetBackdropBorderColor(1, 0.82, 0, 1)
+                    end
+                </OnEnter>
+                <OnLeave>self:SetBackdropBorderColor(0.27, 0.27, 0.27, 1)</OnLeave>
+            </Scripts>
+        </Button>
+    </Frames>
+</Frame>
+
+<!-- GM Button Template -->
+<Button name="SBS_GMButtonTemplate" inherits="BackdropTemplate" virtual="true">
+    <Size x="88" y="24"/>
+    <NormalFont style="GameFontNormalSmall"/>
+    <HighlightFont style="GameFontHighlightSmall"/>
+    <Scripts>
+        <OnLoad>
+            self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+            self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+            self:SetBackdropBorderColor(0.22, 0.22, 0.22, 1)
+        </OnLoad>
+        <OnEnter>self:SetBackdropColor(0.18, 0.18, 0.18, 1)</OnEnter>
+        <OnLeave>self:SetBackdropColor(0.12, 0.12, 0.12, 1)</OnLeave>
+    </Scripts>
+</Button>
+
+<!-- GM Button Wide Template -->
+<Button name="SBS_GMButtonWideTemplate" inherits="BackdropTemplate" virtual="true">
+    <Size x="180" y="24"/>
+    <NormalFont style="GameFontNormalSmall"/>
+    <HighlightFont style="GameFontHighlightSmall"/>
+    <Scripts>
+        <OnLoad>
+            self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+            self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+            self:SetBackdropBorderColor(0.22, 0.22, 0.22, 1)
+        </OnLoad>
+        <OnEnter>self:SetBackdropColor(0.18, 0.18, 0.18, 1)</OnEnter>
+        <OnLeave>self:SetBackdropColor(0.12, 0.12, 0.12, 1)</OnLeave>
+    </Scripts>
+</Button>
+
+<!-- Dialog Template -->
+<Frame name="SBS_DialogTemplate" inherits="BackdropTemplate" virtual="true" movable="true" enableMouse="true" frameStrata="FULLSCREEN_DIALOG">
+    <Scripts>
+        <OnLoad>
+            self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+            self:SetBackdropColor(0.1, 0.1, 0.1, 0.95)
+            self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+        </OnLoad>
+        <OnMouseDown>self:StartMoving()</OnMouseDown>
+        <OnMouseUp>self:StopMovingOrSizing()</OnMouseUp>
+    </Scripts>
+</Frame>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     ГЛАВНОЕ ОКНО
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<Frame name="SBS_MainFrame" parent="UIParent" inherits="BackdropTemplate" movable="true" enableMouse="true" frameStrata="DIALOG" hidden="true">
+<Size x="420" y="535"/>
+<Anchors><Anchor point="CENTER"/></Anchors>
+
+<Scripts>
+    <OnLoad>
+        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+        self:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
+        self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    </OnLoad>
+    <OnMouseDown>if button == "LeftButton" then self:StartMoving() end</OnMouseDown>
+    <OnMouseUp>self:StopMovingOrSizing()</OnMouseUp>
+    <OnShow>SBS:InitMainFrameUI()</OnShow>
+</Scripts>
+
+<Frames>
+    <!-- ══════════ TOP BAR ══════════ -->
+    <Frame name="$parent_TopBar" inherits="BackdropTemplate">
+        <Size x="420" y="36"/>
+        <Anchors><Anchor point="TOP"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.13, 0.13, 0.13, 1)
+                self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+            </OnLoad>
+        </Scripts>
+        <Layers>
+            <Layer level="ARTWORK">
+                <Texture name="$parent_Icon">
+                    <Size x="18" y="18"/>
+                    <Anchors><Anchor point="LEFT" x="10" y="0"/></Anchors>
+                </Texture>
+                <FontString name="$parent_Title" inherits="GameFontNormal" text="SBS Персонаж">
+                    <Anchors><Anchor point="LEFT" x="34" y="0"/></Anchors>
+                    <Color r="0.94" g="0.94" b="0.94"/>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <!-- Кнопка фрейма игрока -->
+            <Button name="$parent_PlayerFrameBtn" inherits="BackdropTemplate">
+                <Size x="20" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-102" y="-8"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>
+                        if SBS.UI and SBS.UI.UnitFrames then
+                            SBS.UI.UnitFrames:TogglePlayerFrame()
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+                        GameTooltip:AddLine("Фрейм игрока")
+                        GameTooltip:AddLine("Показать/скрыть компактный фрейм", 0.7, 0.7, 0.7)
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormalSmall" text="P">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.7" g="0.7" b="0.7"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+            <!-- Кнопка фрейма цели -->
+            <Button name="$parent_TargetFrameBtn" inherits="BackdropTemplate">
+                <Size x="20" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-78" y="-8"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>
+                        if SBS.UI and SBS.UI.UnitFrames then
+                            SBS.UI.UnitFrames:ToggleTargetFrame()
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+                        GameTooltip:AddLine("Фрейм цели")
+                        GameTooltip:AddLine("Показать/скрыть фрейм NPC", 0.7, 0.7, 0.7)
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormalSmall" text="T">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.7" g="0.7" b="0.7"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+            <!-- Кнопка блокировки перемещения -->
+            <Button name="$parent_LockFramesBtn" inherits="BackdropTemplate">
+                <Size x="20" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-54" y="-8"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>
+                        if SBS.UI and SBS.UI.UnitFrames then
+                            SBS.UI.UnitFrames:ToggleLock()
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+                        GameTooltip:AddLine("Блокировка")
+                        GameTooltip:AddLine("Заблокировать перемещение фреймов", 0.7, 0.7, 0.7)
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormalSmall" text="L">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.7" g="0.7" b="0.7"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+            <!-- Кнопка информации (круглая иконка) -->
+            <Button name="$parent_InfoBtn">
+                <Size x="20" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-30" y="-8"/></Anchors>
+                <NormalTexture parentKey="icon" file="Interface\AddOns\SBS\texture\informationicon">
+                    <Size x="20" y="20"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                </NormalTexture>
+                <HighlightTexture file="Interface\AddOns\SBS\texture\informationicon" alphaMode="ADD">
+                    <Size x="20" y="20"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                    <Color r="0.3" g="0.5" b="0.8" a="0.5"/>
+                </HighlightTexture>
+                <Scripts>
+                    <OnEnter>
+                        SBS:ShowAddonInfoTooltip(self)
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+            <!-- Кнопка закрытия (тёмный стиль) -->
+            <Button name="$parent_CloseBtn" inherits="BackdropTemplate">
+                <Size x="22" y="22"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-4" y="-4"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnEnter>
+                        self:SetBackdropColor(0.5, 0.15, 0.15, 1)
+                        self.x:SetTextColor(1, 1, 1)
+                    </OnEnter>
+                    <OnLeave>
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self.x:SetTextColor(0.6, 0.6, 0.6)
+                    </OnLeave>
+                    <OnClick>SBS_MainFrame:Hide()</OnClick>
+                </Scripts>
+                <Layers><Layer level="OVERLAY">
+                    <FontString name="$parent_x" parentKey="x" inherits="GameFontNormal" text="X">
+                        <Anchors><Anchor point="CENTER" y="1"/></Anchors>
+                        <Color r="0.6" g="0.6" b="0.6"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- ══════════ PLAYER HEADER ══════════ -->
+    <Frame name="$parent_PlayerHeader">
+        <Size x="390" y="60"/>
+        <Anchors><Anchor point="TOP" y="-46"/></Anchors>
+        <Frames>
+            <!-- Portrait (круглый) -->
+            <Frame name="$parent_Portrait" inherits="BackdropTemplate">
+                <Size x="56" y="56"/>
+                <Anchors><Anchor point="LEFT"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 2})
+                        self:SetBackdropColor(0.05, 0.05, 0.05, 1)
+                        self:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+                    </OnLoad>
+                </Scripts>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Texture">
+                            <Size x="52" y="52"/>
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <!-- Level Badge -->
+                    <Frame name="$parent_LevelFrame" inherits="BackdropTemplate">
+                        <Size x="22" y="18"/>
+                        <Anchors><Anchor point="BOTTOMRIGHT" x="6" y="-6"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                                self:SetBackdropBorderColor(0.33, 0.33, 0.33, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="1">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="0.82" b="0"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                </Frames>
+            </Frame>
+            
+            <!-- Name + XP -->
+            <Frame name="$parent_Info">
+                <Size x="280" y="56"/>
+                <Anchors><Anchor point="LEFT" x="66" y="0"/></Anchors>
+                <Layers><Layer level="ARTWORK">
+                    <FontString name="$parent_Name" inherits="GameFontNormalLarge" text="Player">
+                        <Anchors><Anchor point="TOPLEFT" x="0" y="-2"/></Anchors>
+                        <Color r="1" g="0.82" b="0"/>
+                    </FontString>
+                </Layer></Layers>
+                <Frames>
+                    <!-- Effects Container (справа от имени) -->
+                    <Frame name="$parent_Effects">
+                        <Size x="240" y="36"/>
+                        <Anchors><Anchor point="TOPLEFT" x="100" y="-2"/></Anchors>
+                    </Frame>
+                    
+                    <!-- XP Bar -->
+                    <StatusBar name="$parent_XPBar" inherits="BackdropTemplate" minValue="0" maxValue="100">
+                        <Size x="280" y="14"/>
+                        <Anchors><Anchor point="BOTTOM" x="0" y="0"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.04, 0.04, 0.04, 1)
+                                self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                        <BarColor r="0.35" g="0.2" b="0.46"/>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="XP 0/100">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="1" b="1"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </StatusBar>
+                </Frames>
+            </Frame>
+            
+            <!-- GM Button (справа от имени) -->
+            <Button name="$parent_GMButton">
+                <Size x="24" y="24"/>
+                <Anchors><Anchor point="RIGHT" x="0" y="10"/></Anchors>
+                <NormalTexture file="Interface\AddOns\SBS\texture\settings"/>
+                <HighlightTexture file="Interface\AddOns\SBS\texture\settings" alphaMode="ADD"/>
+                <Scripts><OnClick>SBS:ToggleGMPanel()</OnClick></Scripts>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- ══════════ HEALTH SECTION ══════════ -->
+    <Frame name="$parent_HealthSection">
+        <Size x="390" y="85"/>
+        <Anchors><Anchor point="TOP" y="-115"/></Anchors>
+        <Layers><Layer level="ARTWORK">
+            <FontString name="$parent_Label" inherits="GameFontNormalSmall" text="ЗДОРОВЬЕ">
+                <Anchors><Anchor point="TOPLEFT" x="5" y="0"/></Anchors>
+                <Color r="0.6" g="0.6" b="0.6"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <!-- HP Minus Button -->
+            <Button name="$parent_MinusBtn" inherits="BackdropTemplate">
+                <Size x="32" y="32"/>
+                <Anchors><Anchor point="TOPLEFT" x="0" y="-18"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:ModifyPlayerHealth(-1)</OnClick>
+                    <OnEnter>self:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)</OnLeave>
+                </Scripts>
+                <NormalTexture file="Interface\AddOns\SBS\texture\minus">
+                    <Size x="16" y="16"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                </NormalTexture>
+            </Button>
+            
+            <!-- HP Bar Container -->
+            <Frame name="$parent_HPContainer">
+                <Size x="310" y="32"/>
+                <Anchors><Anchor point="TOP" x="0" y="-18"/></Anchors>
+                <Frames>
+                    <!-- HP Bar -->
+                    <StatusBar name="$parent_HPBar" inherits="BackdropTemplate" minValue="0" maxValue="10">
+                        <Size x="310" y="32"/>
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.04, 0.04, 0.04, 1)
+                                self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                        <BarColor r="0.07" g="0.56" b="0.27"/>
+                    </StatusBar>
+                    
+                    <!-- Shield Bar (overlay) -->
+                    <StatusBar name="$parent_ShieldBar" minValue="0" maxValue="10" frameLevel="10">
+                        <Size x="306" y="28"/>
+                        <Anchors><Anchor point="LEFT" x="2" y="0"/></Anchors>
+                        <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                        <BarColor r="0.3" g="0.6" b="0.9" a="0.6"/>
+                    </StatusBar>
+                    
+                    <!-- HP/Shield Text -->
+                    <Frame name="$parent_TextFrame" frameLevel="15">
+                        <Size x="310" y="32"/>
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString name="$parent_HPText" inherits="GameFontNormal" text="10 / 10">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="1" b="1"/>
+                            </FontString>
+                            <FontString name="$parent_ShieldText" inherits="GameFontNormalSmall" text="" hidden="true">
+                                <Anchors><Anchor point="RIGHT" x="-8" y="0"/></Anchors>
+                                <Color r="0.5" g="0.8" b="1"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                    
+                    <!-- Wounds Badge -->
+                    <Frame name="$parent_WoundsBadge" inherits="BackdropTemplate" hidden="true" frameLevel="20">
+                        <Size x="36" y="18"/>
+                        <Anchors><Anchor point="LEFT" x="8" y="0"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.4, 0, 0, 0.8)
+                                self:SetBackdropBorderColor(0.6, 0.2, 0.2, 0.5)
+                            </OnLoad>
+                        </Scripts>
+                        <Layers><Layer level="OVERLAY">
+                            <Texture name="$parent_Icon">
+                                <Size x="10" y="10"/>
+                                <Anchors><Anchor point="LEFT" x="4" y="0"/></Anchors>
+                            </Texture>
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="0">
+                                <Anchors><Anchor point="LEFT" x="16" y="0"/></Anchors>
+                                <Color r="1" g="0.7" b="0.7"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                </Frames>
+            </Frame>
+            
+            <!-- HP Plus Button -->
+            <Button name="$parent_PlusBtn" inherits="BackdropTemplate">
+                <Size x="32" y="32"/>
+                <Anchors><Anchor point="TOPRIGHT" x="0" y="-18"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:ModifyPlayerHealth(1)</OnClick>
+                    <OnEnter>self:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)</OnLeave>
+                </Scripts>
+                <NormalTexture file="Interface\AddOns\SBS\texture\plus">
+                    <Size x="16" y="16"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                </NormalTexture>
+            </Button>
+            
+            <!-- Energy Minus Button -->
+            <Button name="$parent_EnergyMinusBtn" inherits="BackdropTemplate">
+                <Size x="32" y="24"/>
+                <Anchors><Anchor point="TOPLEFT" x="0" y="-53"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:SpendEnergy(1)</OnClick>
+                    <OnEnter>self:SetBackdropBorderColor(0.4, 0.3, 0.6, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)</OnLeave>
+                </Scripts>
+                <NormalTexture file="Interface\AddOns\SBS\texture\minus">
+                    <Size x="12" y="12"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                    <Color r="0.7" g="0.5" b="1"/>
+                </NormalTexture>
+            </Button>
+            
+            <!-- Energy Bar -->
+            <StatusBar name="$parent_EnergyBar" inherits="BackdropTemplate" minValue="0" maxValue="5">
+                <Size x="310" y="24"/>
+                <Anchors><Anchor point="TOP" x="0" y="-53"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.04, 0.04, 0.04, 1)
+                        self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                    </OnLoad>
+                    <OnEnter>
+                        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                        GameTooltip:AddLine("Энергия", 0.6, 0.4, 1)
+                        GameTooltip:AddLine("Тратится на особые действия и AoE", 1, 1, 1, true)
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>GameTooltip:Hide()</OnLeave>
+                </Scripts>
+                <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                <BarColor r="0.4" g="0.25" b="0.6"/>
+                <Layers><Layer level="OVERLAY">
+                    <Texture name="$parent_Icon" file="Interface\AddOns\SBS\texture\zap">
+                        <Size x="14" y="14"/>
+                        <Anchors><Anchor point="LEFT" x="6" y="0"/></Anchors>
+                        <Color r="0.8" g="0.6" b="1"/>
+                    </Texture>
+                    <FontString name="$parent_Text" inherits="GameFontNormal" text="2 / 2">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.9" g="0.8" b="1"/>
+                    </FontString>
+                </Layer></Layers>
+            </StatusBar>
+            
+            <!-- Energy Plus Button -->
+            <Button name="$parent_EnergyPlusBtn" inherits="BackdropTemplate">
+                <Size x="32" y="24"/>
+                <Anchors><Anchor point="TOPRIGHT" x="0" y="-53"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:AddEnergy(1)</OnClick>
+                    <OnEnter>self:SetBackdropBorderColor(0.4, 0.3, 0.6, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)</OnLeave>
+                </Scripts>
+                <NormalTexture file="Interface\AddOns\SBS\texture\plus">
+                    <Size x="12" y="12"/>
+                    <Anchors><Anchor point="CENTER"/></Anchors>
+                    <Color r="0.7" g="0.5" b="1"/>
+                </NormalTexture>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- ══════════ STATS PANEL ══════════ -->
+    <Frame name="$parent_StatsPanel" inherits="BackdropTemplate">
+        <Size x="390" y="145"/>
+        <Anchors><Anchor point="TOP" y="-207"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.05, 0.05, 0.05, 0.5)
+                self:SetBackdropBorderColor(0.15, 0.15, 0.15, 1)
+            </OnLoad>
+        </Scripts>
+        <Layers><Layer level="ARTWORK">
+            <FontString inherits="GameFontNormalSmall" text="АТАКА">
+                <Anchors><Anchor point="TOPLEFT" x="15" y="-8"/></Anchors>
+                <Color r="0.47" g="0.47" b="0.47"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="ЗАЩИТА">
+                <Anchors><Anchor point="TOP" x="60" y="-8"/></Anchors>
+                <Color r="0.47" g="0.47" b="0.47"/>
+            </FontString>
+            <!-- Урон и Исцеление (справа внизу) -->
+            <FontString name="$parent_DamageLabel" inherits="GameFontNormalSmall" text="|cFFFF6666Урон:|r">
+                <Anchors><Anchor point="TOPLEFT" x="205" y="-109"/></Anchors>
+            </FontString>
+            <FontString name="$parent_DamageValue" inherits="GameFontNormalSmall" text="1-2">
+                <Anchors><Anchor point="TOPLEFT" x="240" y="-109"/></Anchors>
+                <Color r="1" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString name="$parent_HealLabel" inherits="GameFontNormalSmall" text="|cFF66FF66Лечение:|r">
+                <Anchors><Anchor point="TOPLEFT" x="205" y="-126"/></Anchors>
+            </FontString>
+            <FontString name="$parent_HealValue" inherits="GameFontNormalSmall" text="1-2">
+                <Anchors><Anchor point="TOPLEFT" x="265" y="-126"/></Anchors>
+                <Color r="0.4" g="1" b="0.4"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <!-- Points Badge (очки распределения) -->
+            <Frame name="$parent_PointsBadge" inherits="BackdropTemplate" hidden="true">
+                <Size x="80" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-5" y="-5"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.3, 0.25, 0, 0.3)
+                        self:SetBackdropBorderColor(0.6, 0.5, 0, 0.3)
+                    </OnLoad>
+                </Scripts>
+                <Layers><Layer level="OVERLAY">
+                    <Texture name="$parent_Icon">
+                        <Size x="10" y="10"/>
+                        <Anchors><Anchor point="LEFT" x="6" y="0"/></Anchors>
+                    </Texture>
+                    <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="+ 3 Очков">
+                        <Anchors><Anchor point="LEFT" x="20" y="0"/></Anchors>
+                        <Color r="0.9" g="0.75" b="0"/>
+                    </FontString>
+                </Layer></Layers>
+            </Frame>
+            <Frame name="$parent_Strength" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="10" y="-28"/></Anchors></Frame>
+            <Frame name="$parent_Dexterity" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="10" y="-55"/></Anchors></Frame>
+            <Frame name="$parent_Intelligence" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="10" y="-82"/></Anchors></Frame>
+            <Frame name="$parent_Spirit" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="10" y="-109"/></Anchors></Frame>
+            <Frame name="$parent_Fortitude" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="200" y="-28"/></Anchors></Frame>
+            <Frame name="$parent_Reflex" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="200" y="-55"/></Anchors></Frame>
+            <Frame name="$parent_Will" inherits="SBS_StatRowTemplate"><Anchors><Anchor point="TOPLEFT" x="200" y="-82"/></Anchors></Frame>
+        </Frames>
+    </Frame>
+
+    <!-- ══════════ TARGET FRAME (расширенный для NPC и игроков) ══════════ -->
+    <Frame name="$parent_TargetFrame" inherits="BackdropTemplate">
+        <Size x="390" y="115"/>
+        <Anchors><Anchor point="TOP" y="-357"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.07, 0.07, 0.07, 1)
+                self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+            </OnLoad>
+        </Scripts>
+        <Frames>
+            <!-- Target Portrait -->
+            <Frame name="$parent_Portrait" inherits="BackdropTemplate">
+                <Size x="50" y="50"/>
+                <Anchors><Anchor point="TOPLEFT" x="6" y="-6"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 2})
+                        self:SetBackdropColor(0.05, 0.05, 0.05, 1)
+                        self:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+                    </OnLoad>
+                </Scripts>
+                <Layers>
+                    <Layer level="ARTWORK">
+                        <Texture name="$parent_Texture">
+                            <Size x="46" y="46"/>
+                            <Anchors><Anchor point="CENTER"/></Anchors>
+                        </Texture>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <!-- Level Badge (для игроков) -->
+                    <Frame name="$parent_LevelFrame" inherits="BackdropTemplate" hidden="true">
+                        <Size x="20" y="16"/>
+                        <Anchors><Anchor point="BOTTOMRIGHT" x="4" y="-4"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                                self:SetBackdropBorderColor(0.33, 0.33, 0.33, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="1">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="0.82" b="0"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                </Frames>
+            </Frame>
+            
+            <!-- Target Info -->
+            <Frame name="$parent_Info">
+                <Size x="320" y="85"/>
+                <Anchors><Anchor point="TOPLEFT" x="62" y="0"/></Anchors>
+                <Layers><Layer level="ARTWORK">
+                    <FontString name="$parent_Name" inherits="GameFontNormal" text="Нет цели">
+                        <Anchors><Anchor point="TOPLEFT" x="0" y="-6"/></Anchors>
+                        <Color r="0.86" g="0.86" b="0.86"/>
+                    </FontString>
+                </Layer></Layers>
+                <Frames>
+                    <!-- HP Bar с текстом по центру -->
+                    <StatusBar name="$parent_HPBar" inherits="BackdropTemplate" minValue="0" maxValue="100">
+                        <Size x="310" y="14"/>
+                        <Anchors><Anchor point="TOPLEFT" y="-24"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.04, 0.04, 0.04, 1)
+                                self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                        <BarColor r="0.55" g="0" b="0"/>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="1" b="1"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </StatusBar>
+                    
+                    <!-- Shield Bar (для игроков) -->
+                    <StatusBar name="$parent_ShieldBar" inherits="BackdropTemplate" minValue="0" maxValue="100" hidden="true">
+                        <Size x="310" y="5"/>
+                        <Anchors><Anchor point="TOPLEFT" relativeTo="$parent_HPBar" relativePoint="BOTTOMLEFT" y="-1"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8"})
+                                self:SetBackdropColor(0.04, 0.04, 0.04, 1)
+                            </OnLoad>
+                        </Scripts>
+                        <BarTexture file="Interface\AddOns\SBS\texture\bar_texture"/>
+                        <BarColor r="0.4" g="0.7" b="1"/>
+                    </StatusBar>
+                    
+                    <!-- Attacker Indicator (под HP баром по центру) -->
+                    <Frame name="$parent_AttackerIndicator" hidden="true">
+                        <Size x="150" y="14"/>
+                        <Anchors><Anchor point="TOP" relativeTo="$parent_HPBar" relativePoint="BOTTOM" y="-4"/></Anchors>
+                        <Layers><Layer level="ARTWORK">
+                            <Texture name="$parent_Icon" file="Interface\AddOns\SBS\texture\sword">
+                                <Size x="14" y="14"/>
+                                <Anchors><Anchor point="LEFT" x="30"/></Anchors>
+                                <Color r="1" g="0.4" b="0.4"/>
+                            </Texture>
+                            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="Атакующий NPC">
+                                <Anchors><Anchor point="LEFT" x="48" y="0"/></Anchors>
+                                <Color r="1" g="0.4" b="0.4"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                    
+                    <!-- Player Stats (для игроков) - атакующие и защитные в одну строку -->
+                    <Frame name="$parent_PlayerStats" hidden="true">
+                        <Size x="310" y="40"/>
+                        <Anchors><Anchor point="TOPLEFT" y="-44"/></Anchors>
+                        <Layers><Layer level="ARTWORK">
+                            <FontString name="$parent_Stats" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="TOPLEFT"/></Anchors>
+                                <Color r="0.6" g="0.6" b="0.6"/>
+                            </FontString>
+                            <FontString name="$parent_Wounds" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="TOPRIGHT"/></Anchors>
+                                <Color r="1" g="0.3" b="0.3"/>
+                            </FontString>
+                        </Layer></Layers>
+                        <Frames>
+                            <!-- Строка эффектов для игрока -->
+                            <Frame name="$parent_EffectsRow" hidden="true">
+                                <Size x="380" y="40"/>
+                                <Anchors><Anchor point="TOPLEFT" y="-16"/></Anchors>
+                                <Layers><Layer level="ARTWORK">
+                                    <FontString name="$parent_Label" inherits="GameFontNormalSmall" text="|cFFFFCC00Эффекты:|r">
+                                        <Anchors><Anchor point="LEFT" y="4"/></Anchors>
+                                    </FontString>
+                                </Layer></Layers>
+                                <Frames>
+                                    <Frame name="$parent_Icons">
+                                        <Size x="300" y="36"/>
+                                        <Anchors><Anchor point="LEFT" x="65"/></Anchors>
+                                    </Frame>
+                                </Frames>
+                            </Frame>
+                        </Frames>
+                    </Frame>
+                    
+                    <!-- NPC Defense Stats -->
+                    <Frame name="$parent_NPCStats" hidden="true">
+                        <Size x="310" y="14"/>
+                        <Anchors><Anchor point="TOPLEFT" y="-44"/></Anchors>
+                        <Layers><Layer level="ARTWORK">
+                            <FontString name="$parent_Fort" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="LEFT"/></Anchors>
+                                <Color r="0.5" g="0.5" b="0.5"/>
+                            </FontString>
+                            <FontString name="$parent_Reflex" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="0.5" g="0.5" b="0.5"/>
+                            </FontString>
+                            <FontString name="$parent_Will" inherits="GameFontNormalSmall" text="">
+                                <Anchors><Anchor point="RIGHT"/></Anchors>
+                                <Color r="0.5" g="0.5" b="0.5"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Frame>
+                    
+                    <!-- Effects Container (под статами) -->
+                    <Frame name="$parent_EffectsRow" hidden="true">
+                        <Size x="380" y="40"/>
+                        <Anchors><Anchor point="TOPLEFT" y="-62"/></Anchors>
+                        <Layers><Layer level="ARTWORK">
+                            <FontString name="$parent_Label" inherits="GameFontNormalSmall" text="|cFFFFCC00Эффекты:|r">
+                                <Anchors><Anchor point="LEFT" y="4"/></Anchors>
+                            </FontString>
+                        </Layer></Layers>
+                        <Frames>
+                            <Frame name="$parent_Icons">
+                                <Size x="300" y="36"/>
+                                <Anchors><Anchor point="LEFT" x="65"/></Anchors>
+                            </Frame>
+                        </Frames>
+                    </Frame>
+                </Frames>
+            </Frame>
+        </Frames>
+    </Frame>
+
+    <!-- ══════════ ACTION BAR ══════════ -->
+    <Frame name="$parent_ActionBar">
+        <Size x="390" y="40"/>
+        <Anchors><Anchor point="BOTTOMLEFT" x="15" y="6"/></Anchors>
+        <Frames>
+            <!-- Action Button -->
+            <Button name="$parent_AttackBtn" inherits="BackdropTemplate">
+                <Size x="120" y="36"/>
+                <Anchors><Anchor point="LEFT"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.6, 0.15, 0.1, 1)
+                        self:SetBackdropBorderColor(0.7, 0.2, 0.15, 1)
+                    </OnLoad>
+                    <OnClick>SBS:ShowAttackMenu(self)</OnClick>
+                    <OnEnter>self:SetBackdropColor(0.7, 0.2, 0.15, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropColor(0.6, 0.15, 0.1, 1)</OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormal" text="Действие">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="1" g="1" b="1"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+            
+            <!-- Check Button -->
+            <Button name="$parent_CheckBtn" inherits="BackdropTemplate">
+                <Size x="120" y="36"/>
+                <Anchors><Anchor point="CENTER"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:ShowCheckMenu(self)</OnClick>
+                    <OnEnter>self:SetBackdropColor(0.2, 0.2, 0.2, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropColor(0.15, 0.15, 0.15, 1)</OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormal" text="Проверка">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.8" g="0.8" b="0.8"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+            
+            <!-- Spec Button -->
+            <Button name="$parent_SpecBtn" inherits="BackdropTemplate">
+                <Size x="120" y="36"/>
+                <Anchors><Anchor point="RIGHT"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>SBS:ShowSpecDialog()</OnClick>
+                    <OnEnter>self:SetBackdropColor(0.2, 0.2, 0.2, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropColor(0.15, 0.15, 0.15, 1)</OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString name="$parent_Text" inherits="GameFontNormal" text="Специализация">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.53" g="0.53" b="0.53"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+        </Frames>
+    </Frame>
+</Frames>
+</Frame>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     GM PANEL
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<Frame name="SBS_GMPanel" parent="UIParent" inherits="BackdropTemplate" movable="true" enableMouse="true" frameStrata="HIGH" hidden="true">
+<Size x="250" y="320"/>
+<Anchors><Anchor point="LEFT" relativeTo="SBS_MainFrame" relativePoint="RIGHT" x="10" y="0"/></Anchors>
+<Scripts>
+    <OnLoad>
+        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+        self:SetBackdropColor(0.08, 0.08, 0.08, 0.95)
+        self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+    </OnLoad>
+    <OnMouseDown>if button == "LeftButton" then self:StartMoving() end</OnMouseDown>
+    <OnMouseUp>self:StopMovingOrSizing()</OnMouseUp>
+</Scripts>
+
+<Layers><Layer level="ARTWORK">
+    <FontString inherits="GameFontNormal" text="ПАНЕЛЬ ВЕДУЩЕГО">
+        <Anchors><Anchor point="TOP" y="-12"/></Anchors>
+        <Color r="1" g="0.82" b="0"/>
+    </FontString>
+</Layer></Layers>
+
+<Frames>
+    <!-- Кнопка закрытия -->
+    <Button name="$parent_CloseBtn" inherits="BackdropTemplate">
+        <Size x="20" y="20"/>
+        <Anchors><Anchor point="TOPRIGHT" x="-4" y="-4"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+            </OnLoad>
+            <OnEnter>
+                self:SetBackdropColor(0.5, 0.15, 0.15, 1)
+                self.x:SetTextColor(1, 1, 1)
+            </OnEnter>
+            <OnLeave>
+                self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                self.x:SetTextColor(0.6, 0.6, 0.6)
+            </OnLeave>
+            <OnClick>SBS_GMPanel:Hide()</OnClick>
+        </Scripts>
+        <Layers><Layer level="OVERLAY">
+            <FontString name="$parent_x" parentKey="x" inherits="GameFontNormalSmall" text="X">
+                <Anchors><Anchor point="CENTER" y="1"/></Anchors>
+                <Color r="0.6" g="0.6" b="0.6"/>
+            </FontString>
+        </Layer></Layers>
+    </Button>
+    
+    <!-- Вкладки -->
+    <Button name="$parent_Tab1" inherits="BackdropTemplate">
+        <Size x="55" y="22"/>
+        <Anchors><Anchor point="TOPLEFT" x="10" y="-34"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                self:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+            </OnLoad>
+            <OnClick>SBS:SetGMPanelTab(1)</OnClick>
+        </Scripts>
+        <Layers><Layer level="OVERLAY">
+            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="Цель">
+                <Anchors><Anchor point="CENTER"/></Anchors>
+                <Color r="0.9" g="0.9" b="0.9"/>
+            </FontString>
+        </Layer></Layers>
+    </Button>
+    <Button name="$parent_Tab2" inherits="BackdropTemplate">
+        <Size x="55" y="22"/>
+        <Anchors><Anchor point="TOPLEFT" x="68" y="-34"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+            </OnLoad>
+            <OnClick>SBS:SetGMPanelTab(2)</OnClick>
+        </Scripts>
+        <Layers><Layer level="OVERLAY">
+            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="Прогресс">
+                <Anchors><Anchor point="CENTER"/></Anchors>
+                <Color r="0.6" g="0.6" b="0.6"/>
+            </FontString>
+        </Layer></Layers>
+    </Button>
+    <Button name="$parent_Tab3" inherits="BackdropTemplate">
+        <Size x="55" y="22"/>
+        <Anchors><Anchor point="TOPLEFT" x="126" y="-34"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+            </OnLoad>
+            <OnClick>SBS:SetGMPanelTab(3)</OnClick>
+        </Scripts>
+        <Layers><Layer level="OVERLAY">
+            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="Бой">
+                <Anchors><Anchor point="CENTER"/></Anchors>
+                <Color r="0.6" g="0.6" b="0.6"/>
+            </FontString>
+        </Layer></Layers>
+    </Button>
+    <Button name="$parent_Tab4" inherits="BackdropTemplate">
+        <Size x="55" y="22"/>
+        <Anchors><Anchor point="TOPLEFT" x="184" y="-34"/></Anchors>
+        <Scripts>
+            <OnLoad>
+                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                self:SetBackdropColor(0.12, 0.12, 0.12, 1)
+                self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+            </OnLoad>
+            <OnClick>SBS:SetGMPanelTab(4)</OnClick>
+        </Scripts>
+        <Layers><Layer level="OVERLAY">
+            <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="Эффекты">
+                <Anchors><Anchor point="CENTER"/></Anchors>
+                <Color r="0.6" g="0.6" b="0.6"/>
+            </FontString>
+        </Layer></Layers>
+    </Button>
+    
+    <!-- ═══════ TAB 1: ЦЕЛЬ ═══════ -->
+    <Frame name="$parent_TabContent1">
+        <Size x="230" y="240"/>
+        <Anchors><Anchor point="TOPLEFT" x="10" y="-60"/></Anchors>
+        <Layers><Layer level="ARTWORK">
+            <FontString inherits="GameFontNormalSmall" text="NPC">
+                <Anchors><Anchor point="TOP" x="0" y="0"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="ИГРОК">
+                <Anchors><Anchor point="TOP" x="0" y="-94"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <!-- NPC (центрировано) -->
+            <Button name="SBS_GMPanel_SetHPBtn" inherits="SBS_GMButtonTemplate" text="Задать HP"><Anchors><Anchor point="TOP" x="-46" y="-16"/></Anchors><Scripts><OnClick>SBS:ShowSetHPDialog()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_DefenseBtn" inherits="SBS_GMButtonTemplate" text="Защита"><Anchors><Anchor point="TOP" x="46" y="-16"/></Anchors><Scripts><OnClick>SBS:ShowDefenseDialog()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_ModifyNPCBtn" inherits="SBS_GMButtonTemplate" text="HP ±"><Anchors><Anchor point="TOP" x="-46" y="-42"/></Anchors><Scripts><OnClick>SBS:ShowModifyNPCHPDialog()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_RemoveNPCBtn" inherits="SBS_GMButtonTemplate" text="Удалить"><Anchors><Anchor point="TOP" x="46" y="-42"/></Anchors><Scripts><OnClick>SBS:RemoveTargetHP() SBS:UpdateMainFrame()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_AttackerBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFF6666Назначить атакующим|r"><Anchors><Anchor point="TOP" x="0" y="-68"/></Anchors><Scripts><OnClick>SBS:SetAttackingNPC() SBS:UpdateMainFrame()</OnClick></Scripts></Button>
+            <!-- Player (центрировано) -->
+            <Button name="SBS_GMPanel_NPCAttackBtn" inherits="SBS_GMButtonTemplate" text="Атака NPC"><Anchors><Anchor point="TOP" x="-46" y="-120"/></Anchors><Scripts><OnClick>SBS:ShowNPCAttackDialog()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_ModifyHPBtn" inherits="SBS_GMButtonTemplate" text="HP ±"><Anchors><Anchor point="TOP" x="46" y="-120"/></Anchors><Scripts><OnClick>SBS:ShowModifyPlayerHPDialog()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_AddWoundBtn" inherits="SBS_GMButtonTemplate" text="|cFFFF6666+Ранение|r"><Anchors><Anchor point="TOP" x="-46" y="-146"/></Anchors><Scripts><OnClick>SBS:MasterAddWound()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_RemWoundBtn" inherits="SBS_GMButtonTemplate" text="|cFF66FF66-Ранение|r"><Anchors><Anchor point="TOP" x="46" y="-146"/></Anchors><Scripts><OnClick>SBS:MasterRemoveWound()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_GiveShieldBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66CCFFДать щит|r"><Anchors><Anchor point="TOP" x="0" y="-172"/></Anchors><Scripts><OnClick>SBS:MasterGiveShield()</OnClick></Scripts></Button>
+            <!-- Attacking NPC Display -->
+            <Frame name="SBS_GMPanel_AttackerDisplay">
+                <Size x="180" y="20"/>
+                <Anchors><Anchor point="TOP" x="0" y="-198"/></Anchors>
+                <Layers><Layer level="ARTWORK">
+                    <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="">
+                        <Anchors><Anchor point="LEFT" x="0" y="0"/></Anchors>
+                        <Color r="1" g="0.4" b="0.4"/>
+                    </FontString>
+                </Layer></Layers>
+                <Frames>
+                    <Button name="$parent_ClearBtn" inherits="BackdropTemplate">
+                        <Size x="18" y="18"/>
+                        <Anchors><Anchor point="RIGHT" x="0" y="0"/></Anchors>
+                        <Scripts>
+                            <OnLoad>
+                                self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                                self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                                self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                            </OnLoad>
+                            <OnEnter>self:SetBackdropColor(0.5, 0.15, 0.15, 1)</OnEnter>
+                            <OnLeave>self:SetBackdropColor(0.15, 0.15, 0.15, 1)</OnLeave>
+                            <OnClick>SBS:ClearAttackingNPC()</OnClick>
+                        </Scripts>
+                        <Layers><Layer level="OVERLAY">
+                            <FontString inherits="GameFontNormalSmall" text="X">
+                                <Anchors><Anchor point="CENTER"/></Anchors>
+                                <Color r="1" g="0.4" b="0.4"/>
+                            </FontString>
+                        </Layer></Layers>
+                    </Button>
+                </Frames>
+            </Frame>
+        </Frames>
+    </Frame>
+    
+    <!-- ═══════ TAB 2: РОЛИ ═══════ -->
+    <Frame name="$parent_TabContent2" hidden="true">
+        <Size x="230" y="240"/>
+        <Anchors><Anchor point="TOPLEFT" x="10" y="-60"/></Anchors>
+        <Layers><Layer level="ARTWORK">
+            <FontString inherits="GameFontNormalSmall" text="РОЛЬ ИГРОКА">
+                <Anchors><Anchor point="TOP" x="0" y="0"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="ХАРАКТЕРИСТИКИ">
+                <Anchors><Anchor point="TOP" x="0" y="-56"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="ЭНЕРГИЯ">
+                <Anchors><Anchor point="TOP" x="0" y="-112"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <Button name="SBS_GMPanel_SetSpecBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFA06AF1Задать роль|r"><Anchors><Anchor point="TOP" x="0" y="-16"/></Anchors><Scripts><OnClick>SBS:MasterSetSpec()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_ResetBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFF9900Сброс статов|r"><Anchors><Anchor point="TOP" x="0" y="-72"/></Anchors><Scripts><OnClick>SBS:MasterResetStats()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_GiveEnergyBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF9966FF+1 энергия|r"><Anchors><Anchor point="TOP" x="0" y="-128"/></Anchors><Scripts><OnClick>SBS:MasterGiveEnergy()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_TakeEnergyBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFF6666-1 энергия|r"><Anchors><Anchor point="TOP" x="0" y="-152"/></Anchors><Scripts><OnClick>SBS:MasterTakeEnergy()</OnClick></Scripts></Button>
+            <Button name="SBS_GMPanel_RestoreEnergyBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66FF66Полная энергия|r"><Anchors><Anchor point="TOP" x="0" y="-176"/></Anchors><Scripts><OnClick>SBS:MasterRestoreEnergy()</OnClick></Scripts></Button>
+        </Frames>
+    </Frame>
+    
+    <!-- ═══════ TAB 3: БОЙ ═══════ -->
+    <Frame name="$parent_TabContent3" hidden="true">
+        <Size x="230" y="240"/>
+        <Anchors><Anchor point="TOPLEFT" x="10" y="-60"/></Anchors>
+        <Layers><Layer level="ARTWORK">
+            <FontString inherits="GameFontNormalSmall" text="ПОШАГОВЫЙ БОЙ">
+                <Anchors><Anchor point="TOP" x="0" y="0"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString parentKey="modeFreeLabel" inherits="GameFontNormalSmall" text="Свободная очередь">
+                <Anchors><Anchor point="TOP" x="20" y="-40"/></Anchors>
+                <Color r="0.9" g="0.9" b="0.9"/>
+            </FontString>
+            <FontString parentKey="modeQueueLabel" inherits="GameFontNormalSmall" text="По порядку инициативы">
+                <Anchors><Anchor point="TOP" x="30" y="-60"/></Anchors>
+                <Color r="0.9" g="0.9" b="0.9"/>
+            </FontString>
+            <FontString parentKey="useTimerLabel" inherits="GameFontNormalSmall" text="Использовать таймер">
+                <Anchors><Anchor point="TOP" x="30" y="-84"/></Anchors>
+                <Color r="0.9" g="0.9" b="0.9"/>
+            </FontString>
+            <FontString parentKey="utilitiesLabel" inherits="GameFontNormalSmall" text="УТИЛИТЫ">
+                <Anchors><Anchor point="TOP" x="0" y="-224"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <!-- Exclude Master checkbox (центрировано) -->
+            <Button name="SBS_GMPanel_ExcludeMasterBtn" inherits="BackdropTemplate">
+                <Size x="180" y="20"/>
+                <Anchors><Anchor point="TOP" x="0" y="-16"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.1, 0.1, 0.1, 0.8)
+                        self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                        self.excludeMaster = true
+                    </OnLoad>
+                    <OnClick>
+                        self.excludeMaster = not self.excludeMaster
+                        SBS:UpdateExcludeMasterButton()
+                    </OnClick>
+                    <OnEnter>self:SetBackdropColor(0.15, 0.15, 0.15, 1)</OnEnter>
+                    <OnLeave>self:SetBackdropColor(0.1, 0.1, 0.1, 0.8)</OnLeave>
+                </Scripts>
+                <Layers><Layer level="OVERLAY">
+                    <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="|cFF66FF66Без ведущего в очереди|r">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
+
+            <!-- Mode selector (радиокнопки) -->
+            <CheckButton name="SBS_GMPanel_ModeFreeCheckBtn" checked="true">
+                <Size x="16" y="16"/>
+                <Anchors><Anchor point="TOP" x="-50" y="-40"/></Anchors>
+                <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+                <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+                <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+                <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+                <Scripts>
+                    <OnClick>SBS:GMToggleModeCheckbox(self, "free")</OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="SBS_GMPanel_ModeQueueCheckBtn">
+                <Size x="16" y="16"/>
+                <Anchors><Anchor point="TOP" x="-50" y="-60"/></Anchors>
+                <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+                <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+                <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+                <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+                <Scripts>
+                    <OnClick>SBS:GMToggleModeCheckbox(self, "queue")</OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Timer checkbox -->
+            <CheckButton name="SBS_GMPanel_UseTimerCheckBtn">
+                <Size x="16" y="16"/>
+                <Anchors><Anchor point="TOP" x="-50" y="-84"/></Anchors>
+                <NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+                <PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+                <HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+                <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+                <Scripts>
+                    <OnClick>SBS:GMToggleTimerCheckbox()</OnClick>
+                </Scripts>
+            </CheckButton>
+
+            <!-- Timer + Start (центрировано) -->
+            <Frame name="SBS_GMPanel_TimerFrame" inherits="BackdropTemplate">
+                <Size x="60" y="24"/>
+                <Anchors><Anchor point="TOP" x="-60" y="-106"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.05, 0.05, 0.05, 1)
+                        self:SetBackdropBorderColor(0.2, 0.2, 0.2, 1)
+                    </OnLoad>
+                </Scripts>
+                <Frames>
+                    <EditBox name="$parent_Input" autoFocus="false" numeric="true">
+                        <Size x="40" y="20"/>
+                        <Anchors><Anchor point="LEFT" x="4" y="0"/></Anchors>
+                        <FontString inherits="GameFontNormal"/>
+                        <Scripts><OnLoad>self:SetText("60")</OnLoad></Scripts>
+                    </EditBox>
+                </Frames>
+                <Layers><Layer level="OVERLAY">
+                    <FontString inherits="GameFontNormalSmall" text="сек">
+                        <Anchors><Anchor point="RIGHT" x="-4" y="0"/></Anchors>
+                        <Color r="0.5" g="0.5" b="0.5"/>
+                    </FontString>
+                </Layer></Layers>
+            </Frame>
+            <Button name="SBS_GMPanel_StartCombatBtn" inherits="SBS_GMButtonTemplate" text="|cFF00FF00Начать бой|r">
+                <Size x="108" y="24"/>
+                <Anchors><Anchor point="TOP" x="34" y="-106"/></Anchors>
+                <Scripts><OnClick>SBS:GMStartCombat()</OnClick></Scripts>
+            </Button>
+            <!-- Combat controls (центрировано) -->
+            <Button name="SBS_GMPanel_SkipTurnBtn" inherits="SBS_GMButtonTemplate" text="Пропустить">
+                <Anchors><Anchor point="TOP" x="-46" y="-134"/></Anchors>
+                <Scripts><OnClick>SBS:GMSkipTurn()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_NPCTurnBtn" inherits="SBS_GMButtonTemplate" text="|cFFA06AF1Ход противника|r">
+                <Anchors><Anchor point="TOP" x="46" y="-134"/></Anchors>
+                <Scripts><OnClick>SBS:GMToggleNPCTurn()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_ShowQueueBtn" inherits="SBS_GMButtonWideTemplate" text="Показать очередь">
+                <Anchors><Anchor point="TOP" x="0" y="-160"/></Anchors>
+                <Scripts><OnClick>SBS:ToggleTurnQueue()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_FreeActionBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFFD700Внеочередной ход|r">
+                <Anchors><Anchor point="TOP" x="0" y="-186"/></Anchors>
+                <Scripts><OnClick>SBS:GMFreeAction()</OnClick></Scripts>
+            </Button>
+            <!-- Utilities (центрировано) -->
+            <Button name="SBS_GMPanel_ClearAllBtn" inherits="SBS_GMButtonWideTemplate" text="Очистить всех NPC">
+                <Anchors><Anchor point="TOP" x="0" y="-240"/></Anchors>
+                <Scripts><OnClick>SBS:ClearAllNPCConfirm()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_SyncBtn" inherits="SBS_GMButtonWideTemplate" text="Синхронизация">
+                <Anchors><Anchor point="TOP" x="0" y="-266"/></Anchors>
+                <Scripts><OnClick>SBS:MasterSync()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_VersionCheckBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66CCFFПроверить версии|r">
+                <Anchors><Anchor point="TOP" x="0" y="-292"/></Anchors>
+                <Scripts><OnClick>SBS:MasterCheckVersions()</OnClick></Scripts>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- ═══════ TAB 4: ЭФФЕКТЫ ═══════ -->
+    <Frame name="$parent_TabContent4" hidden="true">
+        <Size x="230" y="290"/>
+        <Anchors><Anchor point="TOPLEFT" x="10" y="-60"/></Anchors>
+        <Layers><Layer level="ARTWORK">
+            <FontString inherits="GameFontNormalSmall" text="ДЕБАФФЫ НА ИГРОКА">
+                <Anchors><Anchor point="TOP" x="0" y="0"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="БАФФЫ НА ИГРОКА">
+                <Anchors><Anchor point="TOP" x="0" y="-120"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+            <FontString inherits="GameFontNormalSmall" text="СНЯТИЕ ЭФФЕКТОВ">
+                <Anchors><Anchor point="TOP" x="0" y="-168"/></Anchors>
+                <Color r="0.4" g="0.4" b="0.4"/>
+            </FontString>
+        </Layer></Layers>
+        <Frames>
+            <!-- Дебаффы -->
+            <Button name="SBS_GMPanel_StunBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFFFF00Оглушение|r">
+                <Anchors><Anchor point="TOP" x="0" y="-16"/></Anchors>
+                <Scripts><OnClick>SBS:MasterApplyStun()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_DotBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFF6666Периодический урон|r">
+                <Anchors><Anchor point="TOP" x="0" y="-42"/></Anchors>
+                <Scripts><OnClick>SBS:MasterApplyDot()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_VulnBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF9966CCУязвимость|r">
+                <Anchors><Anchor point="TOP" x="0" y="-68"/></Anchors>
+                <Scripts><OnClick>SBS:MasterApplyVulnerability()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_WeaknessBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF996666Ослабление|r">
+                <Anchors><Anchor point="TOP" x="0" y="-94"/></Anchors>
+                <Scripts><OnClick>SBS:MasterApplyWeakness()</OnClick></Scripts>
+            </Button>
+            <!-- Баффы -->
+            <Button name="SBS_GMPanel_BuffBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66FF99Наложить бафф|r">
+                <Anchors><Anchor point="TOP" x="0" y="-136"/></Anchors>
+                <Scripts><OnClick>SBS:MasterApplyBuff()</OnClick></Scripts>
+            </Button>
+            <!-- Снятие -->
+            <Button name="SBS_GMPanel_PurgeBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66CCFFПурж (снять бафф)|r">
+                <Anchors><Anchor point="TOP" x="0" y="-184"/></Anchors>
+                <Scripts><OnClick>SBS:MasterPurge()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_DispelBtn" inherits="SBS_GMButtonWideTemplate" text="|cFF66FF66Диспел (снять дебафф)|r">
+                <Anchors><Anchor point="TOP" x="0" y="-210"/></Anchors>
+                <Scripts><OnClick>SBS:MasterDispel()</OnClick></Scripts>
+            </Button>
+            <Button name="SBS_GMPanel_ClearEffectsBtn" inherits="SBS_GMButtonWideTemplate" text="|cFFFF9900Снять ВСЕ эффекты|r">
+                <Anchors><Anchor point="TOP" x="0" y="-236"/></Anchors>
+                <Scripts><OnClick>SBS:MasterClearAllEffects()</OnClick></Scripts>
+            </Button>
+        </Frames>
+    </Frame>
+</Frames>
+</Frame>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DIALOGS
+     ═══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Set HP -->
+<Frame name="SBS_SetHPDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="180" y="95"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="Задать HP"><Anchors><Anchor point="TOP" y="-10"/></Anchors><Color r="1" g="0.82" b="0"/></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_Input" inherits="InputBoxTemplate" autoFocus="true" numeric="true"><Size x="50" y="20"/><Anchors><Anchor point="BOTTOMLEFT" x="20" y="15"/></Anchors><Scripts><OnEnterPressed>SBS:ApplySetHP()</OnEnterPressed><OnEscapePressed>self:GetParent():Hide()</OnEscapePressed></Scripts></EditBox>
+    <Button name="$parent_OKButton" inherits="SBS_GMButtonTemplate" text="OK"><Size x="60" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-20" y="15"/></Anchors><Scripts><OnClick>SBS:ApplySetHP()</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+<!-- Defense -->
+<Frame name="SBS_DefenseDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="200" y="140"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="Защита NPC"><Anchors><Anchor point="TOP" y="-10"/></Anchors><Color r="1" g="0.82" b="0"/></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="СТОЙК"><Anchors><Anchor point="TOPLEFT" x="15" y="-48"/></Anchors><Color r="0.5" g="0.5" b="0.5"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="СНОР"><Anchors><Anchor point="TOPLEFT" x="15" y="-72"/></Anchors><Color r="0.5" g="0.5" b="0.5"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="ВОЛЯ"><Anchors><Anchor point="TOPLEFT" x="15" y="-96"/></Anchors><Color r="0.5" g="0.5" b="0.5"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_FortInput" inherits="InputBoxTemplate" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="TOPLEFT" x="60" y="-45"/></Anchors></EditBox>
+    <EditBox name="$parent_ReflexInput" inherits="InputBoxTemplate" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="TOPLEFT" x="60" y="-69"/></Anchors></EditBox>
+    <EditBox name="$parent_WillInput" inherits="InputBoxTemplate" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="TOPLEFT" x="60" y="-93"/></Anchors></EditBox>
+    <Button name="$parent_OKButton" inherits="SBS_GMButtonTemplate" text="OK"><Size x="60" y="24"/><Anchors><Anchor point="TOPRIGHT" x="-15" y="-69"/></Anchors><Scripts><OnClick>SBS:ApplyDefenseFromDialog()</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+<!-- Modify NPC HP -->
+<Frame name="SBS_ModifyNPCHPDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="180" y="95"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="|cFFFF6666HP NPC|r"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_Input" inherits="InputBoxTemplate" autoFocus="true" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="BOTTOM" y="20"/></Anchors></EditBox>
+    <Button name="$parent_SubtractButton" inherits="SBS_GMButtonTemplate" text="-"><Size x="40" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="15" y="15"/></Anchors><Scripts><OnClick>SBS:ApplyModifyNPCHP(-1)</OnClick></Scripts></Button>
+    <Button name="$parent_AddButton" inherits="SBS_GMButtonTemplate" text="+"><Size x="40" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-15" y="15"/></Anchors><Scripts><OnClick>SBS:ApplyModifyNPCHP(1)</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+<!-- NPC Attack -->
+<Frame name="SBS_NPCAttackDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="200" y="145"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="|cFFFF6666Атака NPC|r"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="Урон"><Anchors><Anchor point="TOPLEFT" x="15" y="-48"/></Anchors><Color r="1" g="0.4" b="0.4"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="Порог"><Anchors><Anchor point="TOPLEFT" x="15" y="-72"/></Anchors><Color r="1" g="0.82" b="0"/></FontString>
+    <FontString inherits="GameFontNormalSmall" text="Защ."><Anchors><Anchor point="TOPLEFT" x="15" y="-96"/></Anchors><Color r="0.5" g="0.7" b="1"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_DamageInput" inherits="InputBoxTemplate" autoFocus="true" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="TOPLEFT" x="50" y="-45"/></Anchors></EditBox>
+    <EditBox name="$parent_ThresholdInput" inherits="InputBoxTemplate" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="TOPLEFT" x="50" y="-69"/></Anchors></EditBox>
+    <Button name="$parent_DefenseDropdown" inherits="SBS_GMButtonTemplate" text="Стойк."><Size x="60" y="24"/><Anchors><Anchor point="TOPLEFT" x="50" y="-93"/></Anchors><Scripts><OnClick>SBS:ShowNPCAttackDefenseMenu(self)</OnClick></Scripts></Button>
+    <Button name="$parent_OKButton" inherits="SBS_GMButtonTemplate" text="Атака"><Size x="60" y="24"/><Anchors><Anchor point="TOPRIGHT" x="-15" y="-69"/></Anchors><Scripts><OnClick>SBS:ApplyNPCAttack()</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+<!-- Modify Player HP -->
+<Frame name="SBS_ModifyPlayerHPDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="180" y="95"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="|cFF66CCFFHP Игрока|r"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_Input" inherits="InputBoxTemplate" autoFocus="true" numeric="true"><Size x="40" y="20"/><Anchors><Anchor point="BOTTOM" y="20"/></Anchors></EditBox>
+    <Button name="$parent_SubtractButton" inherits="SBS_GMButtonTemplate" text="-"><Size x="40" y="24"/><Anchors><Anchor point="BOTTOMLEFT" x="15" y="15"/></Anchors><Scripts><OnClick>SBS:ApplyModifyPlayerHP(-1)</OnClick></Scripts></Button>
+    <Button name="$parent_AddButton" inherits="SBS_GMButtonTemplate" text="+"><Size x="40" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-15" y="15"/></Anchors><Scripts><OnClick>SBS:ApplyModifyPlayerHP(1)</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+<!-- Give Shield -->
+<Frame name="SBS_GiveShieldDialog" parent="UIParent" inherits="SBS_DialogTemplate" hidden="true">
+<Size x="180" y="95"/><Anchors><Anchor point="CENTER"/></Anchors>
+<Layers><Layer level="ARTWORK">
+    <FontString name="$parent_Title" inherits="GameFontNormal" text="|cFF66CCFFДать щит|r"><Anchors><Anchor point="TOP" y="-10"/></Anchors></FontString>
+    <FontString name="$parent_TargetName" inherits="GameFontNormalSmall" text=""><Anchors><Anchor point="TOP" y="-28"/></Anchors><Color r="0.7" g="0.7" b="0.7"/></FontString>
+</Layer></Layers>
+<Frames>
+    <Button name="$parent_CloseButton" inherits="UIPanelCloseButtonNoScripts"><Size x="16" y="16"/><Anchors><Anchor point="TOPRIGHT" x="-2" y="-2"/></Anchors><Scripts><OnClick>self:GetParent():Hide()</OnClick></Scripts></Button>
+    <EditBox name="$parent_Input" inherits="InputBoxTemplate" autoFocus="true" numeric="true"><Size x="50" y="20"/><Anchors><Anchor point="BOTTOMLEFT" x="20" y="15"/></Anchors><Scripts><OnEnterPressed>SBS:ApplyGiveShield() self:GetParent():Hide()</OnEnterPressed><OnEscapePressed>self:GetParent():Hide()</OnEscapePressed></Scripts></EditBox>
+    <Button name="$parent_OKButton" inherits="SBS_GMButtonTemplate" text="OK"><Size x="60" y="24"/><Anchors><Anchor point="BOTTOMRIGHT" x="-20" y="15"/></Anchors><Scripts><OnClick>SBS:ApplyGiveShield() SBS_GiveShieldDialog:Hide()</OnClick></Scripts></Button>
+</Frames>
+</Frame>
+
+</Ui>

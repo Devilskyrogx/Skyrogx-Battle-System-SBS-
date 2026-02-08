@@ -1,0 +1,83 @@
+## Interface: 90207
+## Title: SBS - Skyrogx Battle System
+## Notes: Ролевая боевая система d20
+## Author: Skyrogx
+## Version: 1.2
+## SavedVariables: SBS_DB
+
+# ═══════════════════════════════════════════════════════════
+# СОВМЕСТИМОСТЬ (загружается первым!)
+# ═══════════════════════════════════════════════════════════
+
+Core\Compat.lua
+
+# ═══════════════════════════════════════════════════════════
+# БИБЛИОТЕКИ
+# ═══════════════════════════════════════════════════════════
+
+# Base
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+
+# Ace3 Core
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+Libs\AceEvent-3.0\AceEvent-3.0.xml
+Libs\AceDB-3.0\AceDB-3.0.xml
+Libs\AceTimer-3.0\AceTimer-3.0.xml
+
+# Ace3 Comm
+Libs\AceSerializer-3.0\AceSerializer-3.0.xml
+Libs\AceComm-3.0\AceComm-3.0.xml
+
+# ═══════════════════════════════════════════════════════════
+# ЯДРО
+# ═══════════════════════════════════════════════════════════
+
+Core\Config.lua
+Core\Utils.lua
+Core\Events.lua
+
+# ═══════════════════════════════════════════════════════════
+# ДАННЫЕ
+# ═══════════════════════════════════════════════════════════
+
+Data\Stats.lua
+Data\Units.lua
+Data\Effects.lua
+
+# ═══════════════════════════════════════════════════════════
+# СИНХРОНИЗАЦИЯ
+# ═══════════════════════════════════════════════════════════
+
+Sync\Core.lua
+Sync\Security.lua
+Sync\Handlers.lua
+
+# ═══════════════════════════════════════════════════════════
+# БОЙ
+# ═══════════════════════════════════════════════════════════
+
+Combat\Combat.lua
+Combat\TurnSystem.lua
+
+# ═══════════════════════════════════════════════════════════
+# ИНТЕРФЕЙС
+# ═══════════════════════════════════════════════════════════
+
+UI\Frames.xml
+UI\MainFrame.lua
+UI\UnitFrames.lua
+UI\Effects.lua
+UI\Nameplates.lua
+UI\MinimapButton.lua
+UI\CombatLog.lua
+UI\Dialogs.lua
+UI\TurnQueue.lua
+UI\Settings.lua
+
+# ═══════════════════════════════════════════════════════════
+# ИНИЦИАЛИЗАЦИЯ (в конце!)
+# ═══════════════════════════════════════════════════════════
+
+Core\Init.lua
+Core\Aliases.lua
