@@ -136,6 +136,40 @@
             </Layer>
         </Layers>
         <Frames>
+            <!-- Кнопка окна очереди -->
+            <Button name="$parent_QueueBtn" inherits="BackdropTemplate">
+                <Size x="20" y="20"/>
+                <Anchors><Anchor point="TOPRIGHT" x="-126" y="-8"/></Anchors>
+                <Scripts>
+                    <OnLoad>
+                        self:SetBackdrop({bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1})
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
+                    </OnLoad>
+                    <OnClick>
+                        if SBS.UI and SBS.UI.ToggleTurnQueue then
+                            SBS.UI:ToggleTurnQueue()
+                        end
+                    </OnClick>
+                    <OnEnter>
+                        self:SetBackdropColor(0.2, 0.2, 0.2, 1)
+                        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+                        GameTooltip:AddLine("Окно очереди")
+                        GameTooltip:AddLine("Показать/скрыть окно очереди боя", 0.7, 0.7, 0.7)
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        self:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+                <Layers><Layer level="ARTWORK">
+                    <FontString inherits="GameFontNormalSmall" text="Q">
+                        <Anchors><Anchor point="CENTER"/></Anchors>
+                        <Color r="0.7" g="0.7" b="0.7"/>
+                    </FontString>
+                </Layer></Layers>
+            </Button>
             <!-- Кнопка фрейма игрока -->
             <Button name="$parent_PlayerFrameBtn" inherits="BackdropTemplate">
                 <Size x="20" y="20"/>

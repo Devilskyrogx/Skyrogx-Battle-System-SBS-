@@ -105,11 +105,11 @@ local function CreateTurnQueueFrame()
     f.timerText:SetPoint("CENTER")
     f.timerText:SetText("|cFFFFFF001:00|r")
     
-    -- Контейнер списка
+    -- Контейнер списка (привязан сверху и снизу для правильного позиционирования)
     local listContainer = CreateFrame("Frame", nil, f, "BackdropTemplate")
     listContainer:SetPoint("TOPLEFT", 4, -50)
     listContainer:SetPoint("TOPRIGHT", -4, -50)
-    listContainer:SetHeight(100) -- Будет пересчитываться
+    listContainer:SetPoint("BOTTOM", 0, 48)  -- Отступ снизу для кнопок (28) + ресайзер (8) + отступы (12)
     listContainer:SetBackdrop(SBS.Utils.Backdrops.Standard)
     listContainer:SetBackdropColor(0.05, 0.05, 0.05, 1)
     listContainer:SetBackdropBorderColor(0.15, 0.15, 0.15, 1)
@@ -285,12 +285,20 @@ local function CreateTurnQueueFrame()
     local isResizing = false
     local startHeight = 0
     local startY = 0
+    local startTop = 0
+    local startLeft = 0
+    
+    -- Флаг что пользователь вручную изменил размер
+    f.userResized = false
     
     resizer:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" then
             isResizing = true
             startHeight = f:GetHeight()
             startY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale()
+            -- Запоминаем позицию верха окна
+            startTop = f:GetTop()
+            startLeft = f:GetLeft()
             self:SetBackdropColor(0.35, 0.35, 0.35, 1)
         end
     end)
@@ -298,6 +306,7 @@ local function CreateTurnQueueFrame()
     resizer:SetScript("OnMouseUp", function(self, button)
         if button == "LeftButton" then
             isResizing = false
+            f.userResized = true  -- Помечаем что пользователь изменил размер
             if self:IsMouseOver() then
                 self:SetBackdropColor(0.25, 0.25, 0.25, 0.9)
             else
@@ -311,11 +320,12 @@ local function CreateTurnQueueFrame()
             local curY = select(2, GetCursorPosition()) / UIParent:GetEffectiveScale()
             local delta = startY - curY
             local newHeight = math.max(200, math.min(800, startHeight + delta))
-            f:SetHeight(newHeight)
             
-            -- Обновляем высоту контейнера списка
-            local containerHeight = newHeight - 50 - 40  -- топбар + таймер + отступы + кнопки
-            listContainer:SetHeight(containerHeight)
+            -- Сохраняем позицию верха окна неизменной (окно растёт вниз)
+            f:ClearAllPoints()
+            f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", startLeft, startTop)
+            f:SetHeight(newHeight)
+            -- listContainer автоматически подстроится благодаря привязке к BOTTOM
         end
     end)
     
@@ -668,6 +678,12 @@ function SBS.UI:UpdateTurnQueue()
         f.timerBar:Show()
     end
     
+    -- Сброс пользовательского размера при новом бое (раунд 1)
+    if ts.round == 1 and f.lastRound ~= 1 then
+        f.userResized = false
+    end
+    f.lastRound = ts.round
+    
     -- Заголовок
     f.title:SetText("|cFFFFD700РАУНД " .. ts.round .. "|r")
 
@@ -752,11 +768,17 @@ function SBS.UI:UpdateTurnQueue()
             row.roll:Hide()
         end
 
+        -- Проверяем внеочередной ход
+        local hasFreeAction = (ts.freeActionGUID and ts.freeActionGUID == p.guid)
+
         -- Статус
         if ts.mode == "queue" then
             -- Очередной режим - показываем ">>" для текущего
             if p.acted then
                 row.status:SetText("|cFF00FF00OK|r")
+            elseif hasFreeAction then
+                -- Пометка о внеочередном ходе (золотая звёздочка)
+                row.status:SetText("|cFFFFD700★|r")
             elseif isCurrent then
                 row.status:SetText("|cFFFFFF00>>|r")
             else
@@ -766,9 +788,18 @@ function SBS.UI:UpdateTurnQueue()
             -- Свободный режим - только OK для сходивших
             if p.acted then
                 row.status:SetText("|cFF00FF00OK|r")
+            elseif hasFreeAction then
+                -- Пометка о внеочередном ходе (золотая звёздочка)
+                row.status:SetText("|cFFFFD700★|r")
             else
                 row.status:SetText("")
             end
+        end
+        
+        -- Подсветка строки для внеочередного хода
+        if hasFreeAction and not p.acted then
+            row:SetBackdropColor(0.25, 0.2, 0.05, 0.9)
+            row:SetBackdropBorderColor(0.9, 0.7, 0.2, 1)
         end
 
         -- Кнопка пропуска (только в свободном режиме для мастера)
@@ -911,14 +942,19 @@ function SBS.UI:UpdateTurnQueue()
         f.scrollBar:Hide()
     end
 
-    -- Автоматический расчёт высоты окна с ограничением
-    local maxVisibleRows = 5
-    local maxListHeight = maxVisibleRows * (ROW_HEIGHT + 2) + 16
-    local listHeight = math.min(participantCount * (ROW_HEIGHT + 2) + 16, maxListHeight)
-    local totalHeight = 26 + 20 + listHeight + 44  -- Увеличили на 4px для ресайзера
-    if not ts.useTimer then totalHeight = totalHeight - 20 end
-    f:SetSize(270, totalHeight)
-    f.listContainer:SetHeight(listHeight)
+    -- Автоматический расчёт высоты окна только если пользователь не изменял размер вручную
+    if not f.userResized then
+        local maxVisibleRows = 5
+        local maxListHeight = maxVisibleRows * (ROW_HEIGHT + 2) + 16
+        local listHeight = math.min(participantCount * (ROW_HEIGHT + 2) + 16, maxListHeight)
+        local totalHeight = 26 + 20 + listHeight + 48  -- topbar + timer + list + buttons area
+        if not ts.useTimer then totalHeight = totalHeight - 20 end
+        -- Минимальная высота окна для красивого вида
+        totalHeight = math.max(totalHeight, 200)
+        f:SetSize(270, totalHeight)
+        -- listContainer автоматически подстроится благодаря привязке к BOTTOM
+    end
+    -- При ручном ресайзе listContainer тоже автоматически подстроится
     
     -- Кнопки действий - показываем все кнопки, но активируем только когда можно действовать
     local canAct = false
@@ -1144,6 +1180,23 @@ function SBS.UI:ShowCombatEndAlert()
     
     -- Звук
     PlaySound(8959, "SFX") -- PVP_THROUGH_QUEUE
+    
+    f:Show()
+    f:SetAlpha(1)
+    f.fadeIn:Play()
+    f.fadeOut:Play()
+end
+
+function SBS.UI:ShowFreeActionAlert()
+    local f = CreatePhaseAlertFrame()
+    
+    -- Золотая тема для внеочередного хода
+    f:SetBackdropColor(0.2, 0.15, 0.05, 0.95)
+    f:SetBackdropBorderColor(0.9, 0.7, 0.2, 1)
+    
+    f.phaseText:SetText("|cFFFFD700ВНЕОЧЕРЕДНОЙ ХОД|r")
+    f.text:SetText("|cFFFFFFFFВам дан внеочередной ход!|r")
+    f.hint:SetText("|cFFAAAAAA(выполните действие)|r")
     
     f:Show()
     f:SetAlpha(1)

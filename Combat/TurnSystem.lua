@@ -1269,9 +1269,19 @@ end
 function SBS.TurnSystem:HandleFreeAction(guid)
     self.freeActionGUID = (guid and guid ~= "") and guid or nil
     
-    -- Если это мы — оповещаем звуком
+    -- Если это мы — оповещаем звуком и показываем алерт
     if self.freeActionGUID == UnitGUID("player") then
         PlaySound(8960, "SFX") -- READY_CHECK
+        -- Показываем визуальное оповещение
+        if SBS.UI and SBS.UI.ShowFreeActionAlert then
+            SBS.UI:ShowFreeActionAlert()
+        end
+        SBS.Utils:Info("|cFFFFD700Вам дан внеочередной ход!|r Выполните действие.")
+    end
+    
+    -- Обновляем окно очереди чтобы показать пометку
+    if SBS.UI and SBS.UI.UpdateTurnQueue then
+        SBS.UI:UpdateTurnQueue()
     end
 end
 
