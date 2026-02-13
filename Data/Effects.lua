@@ -924,6 +924,12 @@ function SBS.Effects:IsStunned(playerName)
     return effect ~= nil
 end
 
+-- Проверка оглушения NPC (по GUID)
+function SBS.Effects:IsNPCStunned(npcGuid)
+    local effect = self:Get("npc", npcGuid, "stun")
+    return effect ~= nil
+end
+
 -- Тикнуть оглушение при пропуске хода
 function SBS.Effects:TickStun(playerName)
     local effect = self:Get("player", playerName, "stun")
@@ -931,6 +937,24 @@ function SBS.Effects:TickStun(playerName)
         effect.remainingRounds = effect.remainingRounds - 1
         if effect.remainingRounds <= 0 then
             self:Remove("player", playerName, "stun")
+        end
+        -- Синхронизируем
+        if SBS.Sync and SBS.Sync:IsMaster() and IsInGroup() then
+            self:BroadcastAllEffects()
+        end
+    end
+end
+
+-- Тикнуть оглушение NPC
+function SBS.Effects:TickNPCStun(npcGuid)
+    local effect = self:Get("npc", npcGuid, "stun")
+    if effect then
+        effect.remainingRounds = effect.remainingRounds - 1
+        if effect.remainingRounds <= 0 then
+            self:Remove("npc", npcGuid, "stun")
+            local npcData = SBS.Units:Get(npcGuid)
+            local npcName = npcData and npcData.name or "НПЦ"
+            SBS.Utils:Info("|cFFFFFF00" .. npcName .. "|r больше не оглушен!")
         end
         -- Синхронизируем
         if SBS.Sync and SBS.Sync:IsMaster() and IsInGroup() then
@@ -1052,6 +1076,10 @@ function SBS.Effects:Dispel(targetName, casterRole)
         SBS.Utils:Info("Снят дебафф с " .. SBS.Utils:Color("FFFFFF", targetName))
         if SBS.Sync then
             SBS.Sync:BroadcastCombatLog(UnitName("player") .. " снимает дебафф с " .. targetName)
+        end
+        -- Диспел засчитывается как ход
+        if SBS.TurnSystem and SBS.TurnSystem:IsActive() then
+            SBS.TurnSystem:OnActionPerformed()
         end
         return true
     else

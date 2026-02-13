@@ -24,6 +24,13 @@ SBS.Combat = {
         hitTargets = {},     -- GUID уже атакованных целей
     },
     
+    -- Состояние AoE исцеления
+    AoEHealState = {
+        active = false,      -- Режим AoE хила активен
+        healsLeft = 0,       -- Осталось исцелений
+        healedTargets = {},  -- Имена уже исцелённых целей
+    },
+    
     -- Ожидающие атаки на игроков (защита от повторных атак)
     PendingAttacks = {},  -- { [playerName] = timestamp }
     PENDING_TIMEOUT = 60, -- Таймаут pending атаки в секундах
@@ -156,6 +163,11 @@ function SBS.Combat:Attack(stat)
     -- Проверка AoE режима
     if self:IsAoEActive() then
         SBS.Utils:Error("Сначала завершите AoE атаку!")
+        return
+    end
+    
+    if self:IsAoEHealActive() then
+        SBS.Utils:Error("Сначала завершите AoE исцеление!")
         return
     end
     
@@ -604,6 +616,269 @@ function SBS.Combat:GetAoEStat()
 end
 
 -- ═══════════════════════════════════════════════════════════
+-- AoE ИСЦЕЛЕНИЕ (для целителей)
+-- ═══════════════════════════════════════════════════════════
+
+function SBS.Combat:StartAoEHeal()
+    -- Проверка пошагового режима
+    if SBS.TurnSystem and not SBS.TurnSystem:CanAct() then
+        SBS.Utils:Error("Сейчас не ваш ход!")
+        return
+    end
+    
+    -- Нельзя начать AoE хил если уже в режиме AoE
+    if self.AoEState.active then
+        SBS.Utils:Error("Сначала завершите AoE атаку!")
+        return
+    end
+    
+    if self.AoEHealState.active then
+        SBS.Utils:Error("AoE исцеление уже активно!")
+        return
+    end
+    
+    -- Проверка энергии
+    local energyCost = SBS.Config.ENERGY_COST_AOE
+    if not SBS.Stats:HasEnergy(energyCost) then
+        SBS.Utils:Error("Недостаточно энергии! Нужно: " .. energyCost)
+        return
+    end
+    
+    -- Тратим энергию
+    SBS.Stats:SpendEnergy(energyCost)
+    
+    -- Бросок на успех AoE хила (Дух)
+    local modifier = SBS.Stats:GetTotal("Spirit")
+    local roll = SBS.Utils:Roll(1, 20)
+    local total = roll + modifier
+    local threshold = SBS.Config.AOE_THRESHOLD
+    local maxTargets = SBS.Config.AOE_MAX_TARGETS
+    
+    local playerName = UnitName("player")
+    local statColor = SBS.Config.StatColors["Spirit"] or "FFE066"
+    local statName = SBS.Config.StatNames["Spirit"] or "Дух"
+    
+    -- Крит провал (1) — промах
+    if roll == 1 then
+        local line1 = string.format("%s пытается использовать AoE %s.",
+            playerName, SBS.Utils:Color(statColor, statName))
+        local line2 = string.format("Результат: %s (%d+%d) < %d - %s",
+            SBS.Utils:Color("FFFF00", total), roll, modifier, threshold,
+            SBS.Utils:Color("FF6666", "крит. провал"))
+        
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line1)
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line2)
+        SBS.Sync:BroadcastCombatLog(line1 .. " " .. line2)
+        
+        if SBS.TurnSystem then
+            SBS.TurnSystem:OnActionPerformed()
+        end
+        return
+    end
+    
+    -- Проверка успеха
+    local isSuccess = total >= threshold
+    
+    if not isSuccess then
+        local line1 = string.format("%s пытается использовать AoE %s.",
+            playerName, SBS.Utils:Color(statColor, statName))
+        local line2 = string.format("Результат: %s (%d+%d) < %d - %s",
+            SBS.Utils:Color("FFFF00", total), roll, modifier, threshold,
+            SBS.Utils:Color("FF6666", "промах"))
+        
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line1)
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line2)
+        SBS.Sync:BroadcastCombatLog(line1 .. " " .. line2)
+        
+        if SBS.TurnSystem then
+            SBS.TurnSystem:OnActionPerformed()
+        end
+        return
+    end
+    
+    -- Успех!
+    local targets = maxTargets
+    
+    if roll == 20 then
+        local line1 = string.format("%s активирует AoE исцеление!",
+            playerName)
+        local line2 = string.format("Результат: %s (%d+%d) >= %d - %s! Целей: %s",
+            SBS.Utils:Color("FFFF00", total), roll, modifier, threshold,
+            SBS.Utils:Color("00FF00", "крит. успех"),
+            SBS.Utils:Color("FFD700", targets))
+        
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line1)
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line2)
+        SBS.Sync:BroadcastCombatLog(line1 .. " " .. line2)
+        
+        -- Возвращаем энергию за крит
+        SBS.Stats:AddEnergy(SBS.Config.ENERGY_GAIN_CRIT_CHOICE)
+    else
+        local line1 = string.format("%s активирует AoE исцеление!",
+            playerName)
+        local line2 = string.format("Результат: %s (%d+%d) >= %d - %s Целей: %s",
+            SBS.Utils:Color("FFFF00", total), roll, modifier, threshold,
+            SBS.Utils:Color("00FF00", "успех!"),
+            SBS.Utils:Color("FFD700", targets))
+        
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line1)
+        print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line2)
+        SBS.Sync:BroadcastCombatLog(line1 .. " " .. line2)
+    end
+    
+    -- Активируем режим AoE хила
+    self.AoEHealState.active = true
+    self.AoEHealState.healsLeft = targets
+    self.AoEHealState.healedTargets = {}
+    
+    SBS.Utils:Info("AoE исцеление активно! Выберите " .. SBS.Utils:Color("FFD700", targets) .. " союзников.")
+    
+    -- Показываем панель AoE хила
+    if SBS.UI and SBS.UI.ShowAoEHealPanel then
+        SBS.UI:ShowAoEHealPanel()
+    end
+end
+
+function SBS.Combat:AoEHealTarget()
+    if not self.AoEHealState.active then
+        SBS.Utils:Error("AoE исцеление не активно!")
+        return
+    end
+    
+    if self.AoEHealState.healsLeft <= 0 then
+        SBS.Utils:Error("Все исцеления использованы!")
+        return
+    end
+    
+    local guid, name = SBS.Utils:GetTargetGUID()
+    
+    if not guid then
+        SBS.Utils:Error("Выберите цель!")
+        return
+    end
+    
+    if not SBS.Utils:IsTargetPlayer() then
+        SBS.Utils:Error("Можно лечить только игроков!")
+        return
+    end
+    
+    -- Проверка на повторное исцеление
+    if self.AoEHealState.healedTargets[name] then
+        SBS.Utils:Error("Этот игрок уже исцелён! Выберите другого.")
+        return
+    end
+    
+    -- AoE хил автоматически успешен, бросаем на крит и количество
+    local roll = SBS.Utils:Roll(1, 20)
+    local isCrit = (roll == 20)
+    local heal = self:CalculateHealing(isCrit)
+    local removeWound = false
+    
+    -- Хилер при крите снимает ранение
+    if isCrit and SBS.Stats:GetRole() == "healer" then
+        removeWound = true
+    end
+    
+    local playerName = UnitName("player")
+    local statColor = SBS.Config.StatColors["Spirit"] or "FFE066"
+    
+    local resultText = isCrit and SBS.Utils:Color("00FF00", "крит!") or SBS.Utils:Color("00FF00", "успех!")
+    local line = string.format("%s [AoE Исцеление] -> %s: %s Лечение: %s",
+        playerName, name, resultText,
+        SBS.Utils:Color("66FF66", heal))
+    
+    print(SBS.Utils:Color(statColor, "[SBS]") .. " " .. line)
+    SBS.Sync:BroadcastCombatLog(line)
+    
+    -- Всплывающий текст
+    local floatType = isCrit and "crit_heal" or "heal"
+    if SBS.UI then
+        SBS.UI:ShowAttackResult(name, floatType, heal)
+    end
+    
+    -- Применяем исцеление
+    if UnitIsUnit("target", "player") then
+        -- Себя
+        local maxHP = SBS.Stats:GetMaxHP()
+        local currentHP = SBS.Stats:GetCurrentHP()
+        local newHP = math.min(maxHP, currentHP + heal)
+        SBS.Stats:SetCurrentHP(newHP)
+        
+        SBS.Utils:Info("Вы восстановили " .. SBS.Utils:Color("00FF00", heal) ..
+            " HP! (" .. newHP .. "/" .. maxHP .. ")")
+        
+        if removeWound and SBS.Stats:GetWounds() > 0 then
+            SBS.Stats:RemoveWound()
+        end
+        
+        if SBS.Sync then
+            SBS.Sync:BroadcastPlayerData()
+        end
+    else
+        -- Другого игрока
+        SBS.Sync:Send("HEAL", name .. ";" .. heal .. ";" .. (removeWound and "1" or "0"))
+        SBS.Utils:Info(name .. " восстановил " .. SBS.Utils:Color("00FF00", heal) .. " HP!")
+    end
+    
+    -- Запоминаем цель и уменьшаем счётчик
+    self.AoEHealState.healedTargets[name] = true
+    self.AoEHealState.healsLeft = self.AoEHealState.healsLeft - 1
+    
+    SBS.Utils:Info("Осталось исцелений: " .. SBS.Utils:Color("FFD700", self.AoEHealState.healsLeft))
+    
+    -- Обновляем панель
+    if SBS.UI and SBS.UI.UpdateAoEHealPanel then
+        SBS.UI:UpdateAoEHealPanel()
+    end
+    
+    -- Проверяем окончание AoE хила
+    if self.AoEHealState.healsLeft <= 0 then
+        self:EndAoEHeal()
+    end
+end
+
+function SBS.Combat:EndAoEHeal()
+    if not self.AoEHealState.active then return end
+    
+    local healed = 0
+    for _ in pairs(self.AoEHealState.healedTargets) do
+        healed = healed + 1
+    end
+    
+    SBS.Utils:Info("AoE исцеление завершено! Исцелено союзников: " .. SBS.Utils:Color("FFD700", healed))
+    
+    -- Сбрасываем состояние
+    self.AoEHealState.active = false
+    self.AoEHealState.healsLeft = 0
+    self.AoEHealState.healedTargets = {}
+    
+    -- Скрываем панель
+    if SBS.UI and SBS.UI.HideAoEHealPanel then
+        SBS.UI:HideAoEHealPanel()
+    end
+    
+    -- Оповещаем пошаговую систему
+    if SBS.TurnSystem then
+        SBS.TurnSystem:OnActionPerformed()
+    end
+end
+
+function SBS.Combat:CancelAoEHeal()
+    if not self.AoEHealState.active then return end
+    
+    SBS.Utils:Warn("AoE исцеление отменено!")
+    self:EndAoEHeal()
+end
+
+function SBS.Combat:IsAoEHealActive()
+    return self.AoEHealState.active
+end
+
+function SBS.Combat:GetAoEHealsLeft()
+    return self.AoEHealState.healsLeft
+end
+
+-- ═══════════════════════════════════════════════════════════
 -- ОСОБОЕ ДЕЙСТВИЕ
 -- ═══════════════════════════════════════════════════════════
 
@@ -704,6 +979,11 @@ function SBS.Combat:Heal()
     -- Проверка AoE режима
     if self:IsAoEActive() then
         SBS.Utils:Error("Сначала завершите AoE атаку!")
+        return
+    end
+    
+    if self:IsAoEHealActive() then
+        SBS.Utils:Error("Сначала завершите AoE исцеление!")
         return
     end
     
@@ -1044,9 +1324,9 @@ end
 -- ═══════════════════════════════════════════════════════════
 
 function SBS.Combat:Check(stat)
-    -- Проверка пошагового режима
-    if SBS.TurnSystem and not SBS.TurnSystem:CanAct() then
-        SBS.Utils:Error("Сейчас не ваш ход!")
+    -- Проверки не тратят ход, доступны в любой момент боя
+    if not SBS.TurnSystem or not SBS.TurnSystem:IsActive() then
+        SBS.Utils:Error("Бой не активен!")
         return
     end
     

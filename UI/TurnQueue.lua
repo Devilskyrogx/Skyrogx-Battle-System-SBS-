@@ -656,6 +656,11 @@ function SBS.UI:UpdateTurnQueue()
     
     -- Фаза NPC - компактное окно с заголовком для перемещения
     if ts.phase == "npc" then
+        -- Сохраняем размеры до сжатия, чтобы восстановить при возврате к фазе игроков
+        if not f._savedWidth then
+            f._savedWidth = f:GetWidth()
+            f._savedHeight = f:GetHeight()
+        end
         f.topBar:Show()
         f.title:SetText("|cFFA06AF1ХОД ПРОТИВНИКА|r")
         f.scrollFrame:Hide()
@@ -666,16 +671,25 @@ function SBS.UI:UpdateTurnQueue()
         f.healBtn:Hide()
         f.timerBar:Hide()
         f.npcText:Hide()
+        f.buttonContainer:Hide()
+        f.resizer:Hide()
         -- Компактное перемещаемое окно
         f:SetSize(220, 50)
         return
     else
-        -- Фаза игроков - показываем всё
+        -- Фаза игроков - восстанавливаем размеры и показываем всё
+        if f._savedWidth then
+            f:SetSize(f._savedWidth, f._savedHeight)
+            f._savedWidth = nil
+            f._savedHeight = nil
+        end
         f.npcText:Hide()
         f.topBar:Show()
         f.scrollFrame:Show()
         f.listContainer:Show()
         f.timerBar:Show()
+        f.buttonContainer:Show()
+        f.resizer:Show()
     end
     
     -- Сброс пользовательского размера при новом бое (раунд 1)
@@ -1327,6 +1341,97 @@ function SBS.UI:UpdateAoEPanel()
     local hitsLeft = SBS.Combat:GetAoEHitsLeft()
     if aoePanel.counterText then
         aoePanel.counterText:SetText("Осталось ударов: |cFFFFD700" .. hitsLeft .. "|r")
+    end
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- AoE ИСЦЕЛЕНИЕ ПАНЕЛЬ
+-- ═══════════════════════════════════════════════════════════
+
+local aoeHealPanel = nil
+
+function SBS.UI:ShowAoEHealPanel()
+    if aoeHealPanel then
+        aoeHealPanel:Hide()
+    end
+    
+    local healsLeft = SBS.Combat:GetAoEHealsLeft()
+    
+    aoeHealPanel = CreateFrame("Frame", "SBS_AoEHealPanel", UIParent, "BackdropTemplate")
+    aoeHealPanel:SetSize(200, 100)
+    aoeHealPanel:SetPoint("TOP", 0, -150)
+    aoeHealPanel:SetFrameStrata("FULLSCREEN_DIALOG")
+    aoeHealPanel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 2
+    })
+    aoeHealPanel:SetBackdropColor(0.05, 0.1, 0.05, 0.95)
+    aoeHealPanel:SetBackdropBorderColor(0.2, 0.7, 0.3, 1)
+    
+    -- Заголовок
+    local title = aoeHealPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -10)
+    title:SetText("|cFF66FF66AoE ИСЦЕЛЕНИЕ|r")
+    
+    -- Стата
+    local statText = aoeHealPanel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    statText:SetPoint("TOP", 0, -30)
+    statText:SetText(SBS.Utils:Color(SBS.Config.StatColors["Spirit"] or "FFE066", SBS.Config.StatNames["Spirit"] or "Дух"))
+    
+    -- Счётчик исцелений
+    aoeHealPanel.counterText = aoeHealPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    aoeHealPanel.counterText:SetPoint("CENTER", 0, 5)
+    aoeHealPanel.counterText:SetText("Осталось: |cFFFFD700" .. healsLeft .. "|r")
+    
+    -- Кнопка исцеления
+    local healBtn = CreateFrame("Button", nil, aoeHealPanel, "BackdropTemplate")
+    healBtn:SetSize(85, 26)
+    healBtn:SetPoint("BOTTOMLEFT", 10, 10)
+    healBtn:SetBackdrop(SBS.Utils.Backdrops.Standard)
+    healBtn:SetBackdropColor(0.15, 0.4, 0.15, 1)
+    healBtn:SetBackdropBorderColor(0.25, 0.6, 0.25, 1)
+    
+    local healText = healBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    healText:SetPoint("CENTER")
+    healText:SetText("|cFFFFFFFFИсцелить|r")
+    
+    healBtn:SetScript("OnEnter", function(self) self:SetBackdropColor(0.2, 0.6, 0.2, 1) end)
+    healBtn:SetScript("OnLeave", function(self) self:SetBackdropColor(0.15, 0.4, 0.15, 1) end)
+    healBtn:SetScript("OnClick", function() SBS.Combat:AoEHealTarget() end)
+    
+    -- Кнопка отмены
+    local cancelBtn = CreateFrame("Button", nil, aoeHealPanel, "BackdropTemplate")
+    cancelBtn:SetSize(85, 26)
+    cancelBtn:SetPoint("BOTTOMRIGHT", -10, 10)
+    cancelBtn:SetBackdrop(SBS.Utils.Backdrops.Standard)
+    cancelBtn:SetBackdropColor(0.2, 0.2, 0.2, 1)
+    cancelBtn:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+    
+    local cancelText = cancelBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    cancelText:SetPoint("CENTER")
+    cancelText:SetText("|cFFAAAAAAОтмена|r")
+    
+    cancelBtn:SetScript("OnEnter", function(self) self:SetBackdropColor(0.3, 0.3, 0.3, 1) end)
+    cancelBtn:SetScript("OnLeave", function(self) self:SetBackdropColor(0.2, 0.2, 0.2, 1) end)
+    cancelBtn:SetScript("OnClick", function() SBS.Combat:CancelAoEHeal() end)
+    
+    aoeHealPanel:Show()
+end
+
+function SBS.UI:HideAoEHealPanel()
+    if aoeHealPanel then
+        aoeHealPanel:Hide()
+        aoeHealPanel = nil
+    end
+end
+
+function SBS.UI:UpdateAoEHealPanel()
+    if not aoeHealPanel or not aoeHealPanel:IsShown() then return end
+
+    local healsLeft = SBS.Combat:GetAoEHealsLeft()
+    if aoeHealPanel.counterText then
+        aoeHealPanel.counterText:SetText("Осталось: |cFFFFD700" .. healsLeft .. "|r")
     end
 end
 

@@ -563,8 +563,14 @@ function UF:CreateTargetInfo(parent)
     name:SetPoint("LEFT", 0, 0)
     name:SetTextColor(1, 0.4, 0.4)
     name:SetJustifyH("LEFT")
-    name:SetWidth(135)
+    name:SetWidth(115)
     info.name = name
+
+    -- Иконка роли
+    local roleIcon = info:CreateTexture(nil, "ARTWORK")
+    roleIcon:SetSize(16, 16)
+    roleIcon:SetPoint("LEFT", name, "RIGHT", 4, 0)
+    info.roleIcon = roleIcon
 
     -- Кнопка информации (показывает статы игрока)
     local infoBtn = CreateFrame("Button", "$parent_InfoBtn", info, "BackdropTemplate")
@@ -1032,6 +1038,7 @@ function UF:UpdateTargetFrame()
                 shield = SBS.Stats:GetShield(),
                 energy = SBS.Stats:GetEnergy(),
                 maxEnergy = SBS.Stats:GetMaxEnergy(),
+                role = SBS.Stats:GetRole(),
             }
         else
             playerData = SBS.Sync and SBS.Sync:GetPlayerData(targetName)
@@ -1046,6 +1053,7 @@ function UF:UpdateTargetFrame()
         SetPortraitTexture(frame.portrait.texture, "target")
         frame.info.name:SetText(targetName)
         frame.info.infoBtn:Hide()
+        frame.info.roleIcon:Hide()
         frame.hpBar:Hide()
         frame.energyBar:Hide()
         frame.defenseRow:Hide()
@@ -1066,6 +1074,15 @@ function UF:UpdateTargetFrame()
         frame.info.name:SetText(targetName)
         frame.info.name:SetTextColor(1, 1, 1)  -- Белый для игроков
         frame.info.infoBtn:Show()  -- Показываем кнопку статов
+
+        -- Иконка роли
+        local role = playerData.role
+        if role and SBS.Config.Roles[role] then
+            frame.info.roleIcon:SetTexture(SBS.Config.Roles[role].icon)
+            frame.info.roleIcon:Show()
+        else
+            frame.info.roleIcon:Hide()
+        end
 
         -- HP бар
         frame.hpBar:Show()
@@ -1092,6 +1109,7 @@ function UF:UpdateTargetFrame()
         frame.info.name:SetText(npcData.name or targetName)
         frame.info.name:SetTextColor(1, 0.4, 0.4)  -- Красный для NPC
         frame.info.infoBtn:Hide()  -- Скрываем кнопку статов для NPC
+        frame.info.roleIcon:Hide()  -- Скрываем иконку роли для NPC
 
         -- HP бар
         frame.hpBar:Show()

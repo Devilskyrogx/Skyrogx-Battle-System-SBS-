@@ -352,6 +352,10 @@ function SBS.Dialogs:ShowAttackMenu(button)
         self:ShowAoEActionMenu(button)
         return
     end
+    if SBS.Combat:IsAoEHealActive() then
+        SBS.Utils:Error("Сначала завершите AoE исцеление!")
+        return
+    end
     
     local guid, name = SBS.Utils:GetTargetGUID()
     local hasTarget = guid ~= nil
@@ -554,6 +558,10 @@ function SBS.Dialogs:ShowAttackOnlyMenu(button)
     -- Если AoE активно, показываем специальное меню
     if SBS.Combat:IsAoEActive() then
         self:ShowAoEActionMenu(button)
+        return
+    end
+    if SBS.Combat:IsAoEHealActive() then
+        SBS.Utils:Error("Сначала завершите AoE исцеление!")
         return
     end
 
@@ -784,6 +792,31 @@ function SBS.Dialogs:ShowAoEActionMenu(button)
     ShowMenu(AttackMenu, button, items)
 end
 
+function SBS.Dialogs:ShowAoEHealActionMenu(button)
+    local healsLeft = SBS.Combat:GetAoEHealsLeft()
+    
+    local items = {
+        { text = "— AoE Исцеление —", isTitle = true },
+        { text = "Осталось: " .. healsLeft, isTitle = true },
+        {
+            text = "Исцелить цель",
+            color = {r = 0.4, g = 1, b = 0.4},
+            tooltip = "AoE исцеление",
+            tooltipDesc = "Исцелить выбранного союзника.\nОдного союзника нельзя исцелить дважды.",
+            func = function() SBS.Combat:AoEHealTarget() end
+        },
+        {
+            text = "Завершить",
+            color = {r = 0.6, g = 0.6, b = 0.6},
+            tooltip = "Отменить",
+            tooltipDesc = "Завершить AoE исцеление досрочно.",
+            func = function() SBS.Combat:CancelAoEHeal() end
+        },
+    }
+    
+    ShowMenu(AttackMenu, button, items)
+end
+
 -- ═══════════════════════════════════════════════════════════
 -- МЕНЮ ЭФФЕКТОВ (для игроков)
 -- ═══════════════════════════════════════════════════════════
@@ -895,6 +928,16 @@ end
 -- ═══════════════════════════════════════════════════════════
 
 function SBS.Dialogs:ShowHealMenu(button)
+    -- Если AoE исцеление активно, показываем специальное меню
+    if SBS.Combat:IsAoEHealActive() then
+        self:ShowAoEHealActionMenu(button)
+        return
+    end
+    if SBS.Combat:IsAoEActive() then
+        SBS.Utils:Error("Сначала завершите AoE атаку!")
+        return
+    end
+    
     local guid, name = SBS.Utils:GetTargetGUID()
     local hasTarget = guid ~= nil
     local isPlayer = hasTarget and SBS.Utils:IsTargetPlayer()
@@ -914,6 +957,29 @@ function SBS.Dialogs:ShowHealMenu(button)
         tooltipDesc = "Бросок d20 + Дух. Восстанавливает HP союзнику.",
         func = function() SBS.Combat:Heal() end
     })
+    
+    -- AoE Исцеление (только целитель, требует энергию)
+    if isHealer then
+        local aoeCost = SBS.Config.ENERGY_COST_AOE
+        local energy = SBS.Stats:GetEnergy()
+        local aoeAvailable = energy >= aoeCost
+        local aoeColorSuffix = aoeAvailable and "" or " |cFF666666(нет энергии)|r"
+        
+        table.insert(items, { text = "— AoE Исцеление (" .. aoeCost .. " энергии) —", isTitle = true })
+        table.insert(items, {
+            text = "AoE Исцеление" .. aoeColorSuffix,
+            color = aoeAvailable and "66FF66" or "666666",
+            tooltip = "AoE Исцеление",
+            tooltipDesc = "Порог " .. SBS.Config.AOE_THRESHOLD .. ". Макс. " .. SBS.Config.AOE_MAX_TARGETS .. " союзников.\nСтоимость: " .. aoeCost .. " энергии",
+            func = function()
+                if not aoeAvailable then
+                    SBS.Utils:Error("Недостаточно энергии!")
+                    return
+                end
+                SBS.Combat:StartAoEHeal()
+            end
+        })
+    end
     
     -- Щит (целитель и универсал)
     if canShield then
@@ -1681,7 +1747,21 @@ function SBS.Dialogs:ShowNPCAttackAlert(npcName, defenseStat, damage, threshold)
     f.npcName:SetText("|cFFFFFFFF" .. npcName .. "|r")
     f.defenseText:SetText("Против вашей " .. (statNames[defenseStat] or defenseStat))
     f.defenseText:Show()
-    f.defendBtn.text:SetText("|cFF00FF00ЗАЩИТА|r")
+    
+    -- Если урон == 0, это проверка, а не атака
+    if damage == 0 then
+        f.title:SetText("|cFFFFD700ПРОВЕРКА!|r")
+        f:SetBackdropBorderColor(0.8, 0.7, 0.2, 1)
+        f.defendBtn.text:SetText("|cFFFFD700БРОСОК|r")
+        f.defendBtn:SetBackdropColor(0.4, 0.35, 0.15, 1)
+        f.defendBtn:SetBackdropBorderColor(0.7, 0.6, 0.2, 1)
+    else
+        f.title:SetText("|cFFFF6666ВАС АТАКУЮТ!|r")
+        f:SetBackdropBorderColor(0.8, 0.3, 0.3, 1)
+        f.defendBtn.text:SetText("|cFF00FF00ЗАЩИТА|r")
+        f.defendBtn:SetBackdropColor(0.2, 0.5, 0.2, 1)
+        f.defendBtn:SetBackdropBorderColor(0.3, 0.8, 0.3, 1)
+    end
     
     -- Сохраняем данные
     f.pendingDamage = damage
@@ -2154,7 +2234,7 @@ function SBS.Dialogs:ShowMasterSpecialActionApproval(playerName, description)
     local f = CreateFrame("Frame", frameName, UIParent, "BackdropTemplate")
 
     -- Настроить размер и фон
-    f:SetSize(400, 320)
+    f:SetSize(400, 355)
     f:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -2245,7 +2325,7 @@ function SBS.Dialogs:ShowMasterSpecialActionApproval(playerName, description)
     f.thresholdInput:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     f.thresholdInput:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
 
-    -- Выбор характеристики (кнопки вместо dropdown)
+    -- Выбор характеристики (кнопки — две строки)
     f.statLabel = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     f.statLabel:SetPoint("TOPLEFT", 20, -215)
     f.statLabel:SetText("Характеристика:")
@@ -2253,57 +2333,65 @@ function SBS.Dialogs:ShowMasterSpecialActionApproval(playerName, description)
     f.selectedStat = "Strength"  -- По умолчанию
 
     local statButtons = {}
-    local xOffset = 130
-    for _, stat in ipairs(SBS.Config.AttackStats) do
-        local statName = SBS.Config.StatNames[stat] or stat
-        local statColor = SBS.Config.StatColors[stat] or "FFFFFF"
+    local row1Stats = { "Strength", "Dexterity", "Intelligence", "Spirit" }
+    local row2Stats = { "Fortitude", "Reflex", "Will" }
 
-        local btn = CreateFrame("Button", nil, f, "BackdropTemplate")
-        btn:SetSize(80, 26)
-        btn:SetPoint("TOPLEFT", xOffset, -210)
-        btn:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1
-        })
+    local function CreateStatRow(stats, yOff)
+        local xOff = 20
+        for _, stat in ipairs(stats) do
+            local statName = SBS.Config.StatNames[stat] or stat
+            local statColor = SBS.Config.StatColors[stat] or "FFFFFF"
 
-        btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        btn.text:SetPoint("CENTER")
-        btn.text:SetText("|cFF" .. statColor .. statName .. "|r")
+            local btn = CreateFrame("Button", nil, f, "BackdropTemplate")
+            btn:SetSize(85, 24)
+            btn:SetPoint("TOPLEFT", xOff, yOff)
+            btn:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8x8",
+                edgeFile = "Interface\\Buttons\\WHITE8x8",
+                edgeSize = 1
+            })
 
-        btn.stat = stat
-        btn.statColor = statColor
+            btn.text = btn:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            btn.text:SetPoint("CENTER")
+            btn.text:SetText("|cFF" .. statColor .. statName .. "|r")
 
-        local function UpdateButtonStates()
-            for _, b in ipairs(statButtons) do
-                if b.stat == f.selectedStat then
-                    b:SetBackdropColor(0.2, 0.4, 0.2, 1)
-                    b:SetBackdropBorderColor(0.3, 0.8, 0.3, 1)
-                else
-                    b:SetBackdropColor(0.15, 0.15, 0.15, 1)
-                    b:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+            btn.stat = stat
+            btn.statColor = statColor
+
+            local function UpdateButtonStates()
+                for _, b in ipairs(statButtons) do
+                    if b.stat == f.selectedStat then
+                        b:SetBackdropColor(0.2, 0.4, 0.2, 1)
+                        b:SetBackdropBorderColor(0.3, 0.8, 0.3, 1)
+                    else
+                        b:SetBackdropColor(0.15, 0.15, 0.15, 1)
+                        b:SetBackdropBorderColor(0.3, 0.3, 0.3, 1)
+                    end
                 end
             end
+
+            btn:SetScript("OnClick", function()
+                f.selectedStat = stat
+                UpdateButtonStates()
+            end)
+
+            btn:SetScript("OnEnter", function(self)
+                if self.stat ~= f.selectedStat then
+                    self:SetBackdropColor(0.25, 0.25, 0.25, 1)
+                end
+            end)
+
+            btn:SetScript("OnLeave", function(self)
+                UpdateButtonStates()
+            end)
+
+            table.insert(statButtons, btn)
+            xOff = xOff + 90
         end
-
-        btn:SetScript("OnClick", function()
-            f.selectedStat = stat
-            UpdateButtonStates()
-        end)
-
-        btn:SetScript("OnEnter", function(self)
-            if self.stat ~= f.selectedStat then
-                self:SetBackdropColor(0.25, 0.25, 0.25, 1)
-            end
-        end)
-
-        btn:SetScript("OnLeave", function(self)
-            UpdateButtonStates()
-        end)
-
-        table.insert(statButtons, btn)
-        xOffset = xOffset + 85
     end
+
+    CreateStatRow(row1Stats, -235)
+    CreateStatRow(row2Stats, -262)
 
     -- Обновить состояние кнопок
     for _, b in ipairs(statButtons) do

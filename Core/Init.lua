@@ -321,7 +321,11 @@ SlashCmdList["SBSHELP"] = function()
     print("  |cFF00FF00/sbsmodifynpchp ±число|r — изменить HP NPC")
     print("  |cFF00FF00/sbsremovenpc|r — удалить цель из базы")
     print("  |cFF00FF00/sbsattacker|r — назначить NPC атакующим")
-    print("  |cFF00FF00/sbsnpcattack <игрок> <урон> <порог> <защита>|r — атака NPC")
+    print("  |cFF00FF00/sbsnpcattack <игрок|%%t> <урон> <порог> <защита>|r — атака NPC")
+    print("  |cFF00FF00/sbsnpceffect <эффект> [значение] [раунды]|r — эффект на НПЦ (цель)")
+    print("  |cFF00FF00/sbsnpcstun [раунды]|r — оглушить НПЦ (цель)")
+    print("  |cFF00FF00/sbsbuff <игрок|%%t> <эффект> [значение] [раунды]|r — бафф на игрока")
+    print("  |cFF00FF00/sbsdebuff <игрок|%%t> <эффект> [значение] [раунды]|r — дебафф на игрока")
     print("  |cFF00FF00/sbshplist|r — список NPC")
     print("  |cFF00FF00/sbshpclear|r — очистить базу NPC")
     print("|cFF66CCFF— Боевые действия —|r")
@@ -531,6 +535,12 @@ SlashCmdList["SBSHEALWOUND"] = function(msg)
     end
     
     SBS.Sync:RemoveWound(target)
+end
+
+-- AoE Исцеление
+SLASH_SBSAOEHEAL1 = "/sbsaoeheal"
+SlashCmdList["SBSAOEHEAL"] = function()
+    SBS.Combat:StartAoEHeal()
 end
 
 -- ═══════════════════════════════════════════════════════════
@@ -936,21 +946,46 @@ SlashCmdList["SBSATTACKER"] = function()
 end
 
 -- Атака NPC на игрока
--- Использование: /sbsnpcattack Игрок 10 15 Fortitude
+-- Функция подстановки %t -> имя цели
+local function ResolveTarget(msg)
+    if msg:find("%%t") then
+        local targetName = UnitName("target")
+        if not targetName then
+            SBS.Utils:Error("Нет цели! Выберите цель для подстановки %t")
+            return nil
+        end
+        return msg:gsub("%%t", targetName)
+    end
+    return msg
+end
+
+-- Атака NPC (мастер)
+-- Использование: /sbsnpcattack Игрок 10 15 Fortitude (или Hybrid)
 SLASH_SBSNPCATTACK1 = "/sbsnpcattack"
 SlashCmdList["SBSNPCATTACK"] = function(msg)
     if not SBS.Utils:RequireMaster() then return end
 
+    msg = ResolveTarget(msg)
+    if not msg then return end
+
     local target, damage, threshold, defense = msg:match("^(%S+)%s+(%d+)%s+(%d+)%s+(%S+)$")
     if not target or not damage or not threshold or not defense then
-        SBS.Utils:Error("Использование: /sbsnpcattack <игрок> <урон> <порог> <защита>")
-        SBS.Utils:Info("Защита: Fortitude, Reflex, Will")
+        SBS.Utils:Error("Использование: /sbsnpcattack <игрок|%%t> <урон> <порог> <защита>")
+        SBS.Utils:Info("Защита: Fortitude, Reflex, Will, Hybrid")
+        return
+    end
+
+    -- Гибридная защита — игрок сам выбирает
+    if defense == "Hybrid" or defense == "hybrid" then
+        if SBS.Combat then
+            SBS.Combat:NPCAttackHybrid(target, tonumber(damage), tonumber(threshold))
+        end
         return
     end
 
     -- Проверяем валидность защиты
     if defense ~= "Fortitude" and defense ~= "Reflex" and defense ~= "Will" then
-        SBS.Utils:Error("Защита должна быть: Fortitude, Reflex или Will")
+        SBS.Utils:Error("Защита должна быть: Fortitude, Reflex, Will или Hybrid")
         return
     end
 
@@ -960,14 +995,17 @@ SlashCmdList["SBSNPCATTACK"] = function(msg)
 end
 
 -- Изменить HP игрока (±)
--- Использование: /sbsmodifyplayerhp Игрок +10 или /sbsmodifyplayerhp Игрок -5
+-- Использование: /sbsmodifyplayerhp Игрок +10 или /sbsmodifyplayerhp %t -5
 SLASH_SBSMODIFYPLAYERHP1 = "/sbsmodifyplayerhp"
 SlashCmdList["SBSMODIFYPLAYERHP"] = function(msg)
     if not SBS.Utils:RequireMaster() then return end
 
+    msg = ResolveTarget(msg)
+    if not msg then return end
+
     local target, delta = msg:match("^(%S+)%s+([+-]?%d+)$")
     if not target or not delta then
-        SBS.Utils:Error("Использование: /sbsmodifyplayerhp <игрок> +число или -число")
+        SBS.Utils:Error("Использование: /sbsmodifyplayerhp <игрок|%%t> +число или -число")
         return
     end
 
@@ -1009,6 +1047,143 @@ SlashCmdList["SBSGIVESHIELD"] = function(msg)
     if SBS.Sync then
         SBS.Sync:GiveShield(target, tonumber(amount))
     end
+end
+
+-- ═══════════════════════════════════════════════════════════
+-- МАКРОСЫ ДЛЯ МАСТЕРА: БАФФЫ, ДЕБАФФЫ, ЭФФЕКТЫ НПЦ
+-- ═══════════════════════════════════════════════════════════
+
+-- Наложить бафф на игрока
+-- /sbsbuff <игрок|%t> <эффект> [значение] [раунды]
+-- Эффекты: empower, fortify_fortitude, fortify_reflex, fortify_will, regeneration, blessing
+SLASH_SBSBUFF1 = "/sbsbuff"
+SlashCmdList["SBSBUFF"] = function(msg)
+    if not SBS.Utils:RequireMaster() then return end
+
+    msg = ResolveTarget(msg)
+    if not msg then return end
+
+    local target, effectId, value, rounds = msg:match("^(%S+)%s+(%S+)%s*(%d*)%s*(%d*)$")
+    if not target or not effectId then
+        SBS.Utils:Error("Использование: /sbsbuff <игрок|%%t> <эффект> [значение] [раунды]")
+        SBS.Utils:Info("Эффекты: empower, fortify_fortitude, fortify_reflex, fortify_will, regeneration, blessing")
+        return
+    end
+
+    local def = SBS.Effects.Definitions[effectId]
+    if not def or def.type ~= "buff" then
+        SBS.Utils:Error("Неизвестный бафф: " .. effectId)
+        return
+    end
+
+    value = tonumber(value) or def.fixedValue or 1
+    rounds = tonumber(rounds) or def.fixedDuration or 3
+
+    SBS.Effects:Apply("player", target, effectId, value, rounds, "Мастер")
+    SBS.Effects:BroadcastAllEffects()
+    SBS.Utils:Info("Бафф |cFF00FF00" .. def.name .. "|r наложен на |cFFFFFFFF" .. target .. "|r")
+    SBS.Sync:BroadcastCombatLog("Мастер накладывает " .. def.name .. " на " .. target .. " (" .. value .. ", " .. rounds .. " р.)")
+end
+
+-- Наложить дебафф на игрока
+-- /sbsdebuff <игрок|%t> <эффект> [значение] [раунды]
+-- Эффекты: stun, weakness_damage, weakness_healing, vulnerability_fortitude, vulnerability_reflex, vulnerability_will, dot_master
+SLASH_SBSDEBUFF1 = "/sbsdebuff"
+SlashCmdList["SBSDEBUFF"] = function(msg)
+    if not SBS.Utils:RequireMaster() then return end
+
+    msg = ResolveTarget(msg)
+    if not msg then return end
+
+    local target, effectId, value, rounds = msg:match("^(%S+)%s+(%S+)%s*(%d*)%s*(%d*)$")
+    if not target or not effectId then
+        SBS.Utils:Error("Использование: /sbsdebuff <игрок|%%t> <эффект> [значение] [раунды]")
+        SBS.Utils:Info("Эффекты: stun, weakness_damage, weakness_healing, vulnerability_fortitude, vulnerability_reflex, vulnerability_will, dot_master")
+        return
+    end
+
+    local def = SBS.Effects.Definitions[effectId]
+    if not def or (def.type ~= "debuff" and def.type ~= "dot") then
+        SBS.Utils:Error("Неизвестный дебафф: " .. effectId)
+        return
+    end
+
+    value = tonumber(value) or def.fixedValue or 1
+    rounds = tonumber(rounds) or def.fixedDuration or 2
+
+    SBS.Effects:Apply("player", target, effectId, value, rounds, "Мастер")
+    SBS.Effects:BroadcastAllEffects()
+    SBS.Utils:Info("Дебафф |cFFFF6666" .. def.name .. "|r наложен на |cFFFFFFFF" .. target .. "|r")
+    SBS.Sync:BroadcastCombatLog("Мастер накладывает " .. def.name .. " на " .. target .. " (" .. value .. ", " .. rounds .. " р.)")
+end
+
+-- Наложить эффект на НПЦ (по цели в игре)
+-- /sbsnpceffect <эффект> [значение] [раунды]
+-- Эффекты: stun, weakness_fortitude, weakness_reflex, weakness_will, bleeding
+SLASH_SBSNPCEFFECT1 = "/sbsnpceffect"
+SlashCmdList["SBSNPCEFFECT"] = function(msg)
+    if not SBS.Utils:RequireMaster() then return end
+
+    local effectId, value, rounds = msg:match("^(%S+)%s*(%d*)%s*(%d*)$")
+    if not effectId then
+        SBS.Utils:Error("Использование: /sbsnpceffect <эффект> [значение] [раунды]")
+        SBS.Utils:Info("Эффекты: stun, weakness_fortitude, weakness_reflex, weakness_will, bleeding")
+        return
+    end
+
+    local npcGuid = UnitGUID("target")
+    if not npcGuid then
+        SBS.Utils:Error("Выберите НПЦ в качестве цели!")
+        return
+    end
+
+    local npcData = SBS.Units:Get(npcGuid)
+    if not npcData then
+        SBS.Utils:Error("Цель не является НПЦ в системе SBS!")
+        return
+    end
+
+    local def = SBS.Effects.Definitions[effectId]
+    if not def then
+        SBS.Utils:Error("Неизвестный эффект: " .. effectId)
+        return
+    end
+
+    value = tonumber(value) or def.fixedValue or 1
+    rounds = tonumber(rounds) or def.fixedDuration or 2
+
+    SBS.Effects:Apply("npc", npcGuid, effectId, value, rounds, "Мастер")
+    SBS.Effects:BroadcastAllEffects()
+    local npcName = npcData.name or "НПЦ"
+    SBS.Utils:Info("Эффект |cFFFFD700" .. def.name .. "|r наложен на |cFFFF6666" .. npcName .. "|r")
+    SBS.Sync:BroadcastCombatLog("Мастер накладывает " .. def.name .. " на " .. npcName .. " (" .. value .. ", " .. rounds .. " р.)")
+end
+
+-- Быстро оглушить НПЦ
+-- /sbsnpcstun [раунды]
+SLASH_SBSNPCSTUN1 = "/sbsnpcstun"
+SlashCmdList["SBSNPCSTUN"] = function(msg)
+    if not SBS.Utils:RequireMaster() then return end
+
+    local rounds = tonumber(msg) or 1
+
+    local npcGuid = UnitGUID("target")
+    if not npcGuid then
+        SBS.Utils:Error("Выберите НПЦ в качестве цели!")
+        return
+    end
+
+    local npcData = SBS.Units:Get(npcGuid)
+    if not npcData then
+        SBS.Utils:Error("Цель не является НПЦ в системе SBS!")
+        return
+    end
+
+    SBS.Effects:Apply("npc", npcGuid, "stun", 0, rounds, "Мастер")
+    SBS.Effects:BroadcastAllEffects()
+    local npcName = npcData.name or "НПЦ"
+    SBS.Utils:Info("|cFFFF6666" .. npcName .. "|r оглушен на |cFFFFD700" .. rounds .. "|r р.")
+    SBS.Sync:BroadcastCombatLog("Мастер оглушает " .. npcName .. " на " .. rounds .. " р.")
 end
 
 -- ═══════════════════════════════════════════════════════════
